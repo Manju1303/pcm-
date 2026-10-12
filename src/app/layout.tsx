@@ -6,13 +6,13 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
-  title: "IoT Solar Dryer with PCM Thermal Storage | Monitoring Dashboard",
+  title: "IoT Solar Dryer with PCM Thermal Storage | Live Dashboard",
   description:
-    "Production IoT dashboard and installable PWA for solar dryer with Phase Change Material thermal energy storage, 2 product trays, and dual buzzer alerts.",
+    "Production IoT dashboard and installable PWA for solar dryer with Phase Change Material thermal energy storage, 2 product trays, and temperature monitoring.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Solar Dryer",
   },
   icons: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -34,12 +34,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <link rel="icon" href="/icons/icon-192x192.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
       </head>
-      <body className="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-slate-950">
+      <body className="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
         <TelemetryProvider>
           <ServiceWorkerRegister />
           <Header />
@@ -47,8 +47,8 @@ export default function RootLayout({
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </main>
-          <footer className="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-500 font-mono">
-            College Project: IoT-Based Solar Dryer with PCM Thermal Storage • ESP32 Controller
+          <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium">
+            IoT-Based Solar Dryer with PCM Thermal Storage • ESP32 Controller
           </footer>
         </TelemetryProvider>
       </body>

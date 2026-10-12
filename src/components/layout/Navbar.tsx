@@ -31,7 +31,7 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-900/60 sticky top-16 z-30 overflow-x-auto no-scrollbar">
+    <nav className="border-b border-slate-200 bg-white sticky top-16 z-30 overflow-x-auto no-scrollbar shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-1 sm:space-x-2 py-2 min-w-max">
           {NAV_ITEMS.map((item) => {
@@ -43,11 +43,11 @@ export function Navbar() {
                 href={item.href}
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs font-semibold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-slate-400"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-slate-500"}`} />
                 <span>{item.name}</span>
               </Link>
             );
