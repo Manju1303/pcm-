@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#080e1a" />
+    </linearGradient>
+    <linearGradient id="solarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="pcmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="trayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded plate -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="none" stroke="#1e293b" stroke-width="6" />
+
+  <!-- Sun Rays & Solar Glow -->
+  <circle cx="256" cy="130" r="48" fill="url(#solarGrad)" filter="drop-shadow(0 0 16px rgba(245, 158, 11, 0.6))" />
+  <g stroke="#f59e0b" stroke-width="8" stroke-linecap="round">
+    <line x1="256" y1="52" x2="256" y2="32" />
+    <line x1="256" y1="208" x2="256" y2="228" />
+    <line x1="178" y1="130" x2="158" y2="130" />
+    <line x1="334" y1="130" x2="354" y2="130" />
+    <line x1="201" y1="75" x2="187" y2="61" />
+    <line x1="311" y1="185" x2="325" y2="199" />
+    <line x1="201" y1="185" x2="187" y2="199" />
+    <line x1="311" y1="75" x2="325" y2="61" />
+  </g>
+
+  <!-- Dryer Chamber Outline -->
+  <path d="M120 230 L392 230 L420 440 L92 440 Z" fill="#1e293b" stroke="#334155" stroke-width="8" stroke-linejoin="round" />
+
+  <!-- Tray 1 -->
+  <rect x="136" y="260" width="240" height="24" rx="8" fill="url(#trayGrad)" />
+  <text x="256" y="277" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">TRAY 1</text>
+
+  <!-- Tray 2 -->
+  <rect x="136" y="306" width="240" height="24" rx="8" fill="url(#trayGrad)" />
+  <text x="256" y="323" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">TRAY 2</text>
+
+  <!-- PCM Thermal Storage Reservoir -->
+  <rect x="120" y="356" width="272" height="56" rx="12" fill="url(#pcmGrad)" stroke="#34d399" stroke-width="4" />
+  <text x="256" y="384" font-family="system-ui, sans-serif" font-size="16" font-weight="800" fill="#ffffff" text-anchor="middle">PCM THERMAL STORAGE</text>
+  <text x="256" y="402" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#a7f3d0" text-anchor="middle">LATENT HEAT RESERVOIR</text>
+
+  <!-- Base Feet -->
+  <rect x="130" y="440" width="24" height="24" rx="4" fill="#475569" />
+  <rect x="358" y="440" width="24" height="24" rx="4" fill="#475569" />
+</svg>
