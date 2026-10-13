@@ -12,14 +12,17 @@ export async function GET(req: NextRequest) {
   }
 
   // 2. Fetch from Supabase if configured, otherwise return defaults
+  const deviceId = process.env.DEFAULT_DEVICE_ID || "agni-sakthi-01";
   const supabase = getSupabaseServer();
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from("device_configs")
         .select("*")
-        .eq("device_id", "solar-dryer-01")
-        .single();
+        .or(`device_id.eq.${deviceId},device_id.eq.solar-dryer-01`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (!error && data) {
         return NextResponse.json({
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
 
   // Fallback defaults
   return NextResponse.json({
-    deviceId: "solar-dryer-01",
+    deviceId,
     sendIntervalSec: 60,
     thresholds: {
       tray1Warn: 58.0,

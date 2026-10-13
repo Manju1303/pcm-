@@ -173,18 +173,24 @@ export default function LiveMonitoringPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Live Chamber Gauge Monitor</h2>
+    <>
+      <title>Live Telemetry | Agni Sakthi</title>
+      <meta
+        name="description"
+        content="Real-time circular gauge monitor for drying deck temperatures, PCM latent core, and ESP32 telemetry."
+      />
+      <div className="space-y-6">
+        {/* Top Banner */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+              <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Live Chamber Gauge Monitor</h1>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Real-time telemetry stream from ESP32. Standardised deck probes and PCM core dial monitoring.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Real-time telemetry stream from ESP32. Standardised deck probes and PCM core dial monitoring.
-          </p>
-        </div>
 
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
           {buzzerError && (
@@ -284,5 +290,6 @@ export default function LiveMonitoringPage() {
         </div>
       </div>
     </div>
-  );
+  </>
+);
 }

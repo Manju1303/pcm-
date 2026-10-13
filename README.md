@@ -1,4 +1,4 @@
-# IoT-Based Solar Dryer with PCM Thermal Energy Storage & Temperature Monitoring
+# Agni Sakthi - IoT Solar Dryer with PCM Thermal Storage
 
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -7,7 +7,7 @@
 [![ESP32 Arduino](https://img.shields.io/badge/ESP32-Arduino%20%2F%20PlatformIO-red?logo=espressif)](https://www.espressif.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20RLS-3ecf8e?logo=supabase)](https://supabase.com/)
 
-Monitoring dashboard and installable Progressive Web App (PWA) for an ESP32 solar dryer with Phase Change Material (PCM) thermal storage, deployed at [https://pcm-six.vercel.app](https://pcm-six.vercel.app).
+Monitoring dashboard and installable Progressive Web App (PWA) for Agni Sakthi ESP32 solar dryer with Phase Change Material (PCM) thermal storage, deployed at [https://pcm-six.vercel.app](https://pcm-six.vercel.app). Real-time fluctuating telemetry simulation keeps dials, charts, and metrics active.
 
 ---
 

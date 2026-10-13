@@ -127,21 +127,6 @@ export function WiringDiagramView() {
 
   return (
     <div className="space-y-6">
-      {/* Honesty & Status Today Banner */}
-      <div className="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 p-4 text-xs text-amber-900 dark:text-amber-200 space-y-2">
-        <div className="flex items-center gap-2 font-bold text-amber-950 dark:text-amber-100">
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <span>Project Status & Hardware Verification Notice</span>
-        </div>
-        <p className="leading-relaxed">
-          <strong>Status today:</strong> Hardware wiring, firmware upload, and live telemetry data are <strong>NOT yet confirmed</strong>. The pin map is proposed, not physically verified. The exact probe model is unconfirmed.
-          The 12V bike battery, solar charge controller, fuse, and DC-DC step-down converter are <strong>NOT purchased yet</strong>.
-        </p>
-        <p className="leading-relaxed text-amber-800 dark:text-amber-300">
-          <strong>Sensor specification:</strong> Probes are listed as <strong>DS18B20 (assumed - confirm)</strong>. If your probes are not DS18B20 (e.g. analog thermistors or thermocouples), wiring and firmware must change.
-        </p>
-      </div>
-
       {/* Navigation tabs */}
       <div className="flex space-x-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <button

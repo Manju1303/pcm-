@@ -40,13 +40,16 @@ export async function GET(req: NextRequest) {
 
   let settings = { ...inMemorySettings };
 
+  const deviceId = process.env.DEFAULT_DEVICE_ID || "agni-sakthi-01";
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from("device_configs")
         .select("*")
-        .eq("device_id", "solar-dryer-01")
-        .single();
+        .or(`device_id.eq.${deviceId},device_id.eq.solar-dryer-01`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (!error && data) {
         settings = {
@@ -135,7 +138,7 @@ export async function POST(req: NextRequest) {
       await supabase
         .from("device_configs")
         .upsert({
-          device_id: "solar-dryer-01",
+          device_id: process.env.DEFAULT_DEVICE_ID || "agni-sakthi-01",
           tray1_warn_c: inMemorySettings.thresholds.tray1Warn,
           tray1_crit_c: inMemorySettings.thresholds.tray1Crit,
           tray2_warn_c: inMemorySettings.thresholds.tray2Warn,

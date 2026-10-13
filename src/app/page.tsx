@@ -108,77 +108,83 @@ export default function DashboardOverviewPage() {
     projectPhases[0] || { phaseNumber: 1, title: "Hardware identification & wiring", status: "In progress" };
 
   return (
-    <div className="space-y-6">
-      {/* 1. Overview Order Item 1: 'System at a glance' row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Operating Mode Glance */}
-        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-            Chamber Mode
-          </span>
-          <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-            {currentReading?.operatingStatus ?? "Standby"}
+    <>
+      <title>Overview | Agni Sakthi</title>
+      <meta
+        name="description"
+        content="Agni Sakthi real-time solar dryer chamber telemetry, PCM latent thermal bed storage, and system safety monitoring."
+      />
+      <div className="space-y-6">
+        {/* 1. Overview Order Item 1: 'System at a glance' row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Operating Mode Glance */}
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+              Chamber Mode
+            </span>
+            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+              {currentReading?.operatingStatus ?? "Standby"}
+            </div>
+          </div>
+
+          {/* Device Last Seen */}
+          <div
+            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs cursor-help"
+            title={formatExactDateTime(lastSyncTime)}
+          >
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+              Device Last Seen
+            </span>
+            <div className="text-xs sm:text-sm font-bold font-mono">
+              {isOffline || !lastSyncTime ? (
+                <span className="text-rose-600 dark:text-rose-400">
+                  Offline ({lastSyncTime ? formatRelativeTime(lastSyncTime) : "Never"})
+                </span>
+              ) : isStale ? (
+                <span className="text-amber-600 dark:text-amber-400">
+                  Stale ({formatRelativeTime(lastSyncTime)})
+                </span>
+              ) : (
+                <span className="text-emerald-700 dark:text-emerald-400">
+                  Online ({formatRelativeTime(lastSyncTime)})
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Active Alerts */}
+          <Link
+            href="/alerts"
+            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 transition-colors block"
+          >
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+              Active Alerts
+            </span>
+            <div className="text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+              {activeAlerts.length > 0 ? (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-rose-600" />
+                  <span className="text-rose-600 font-mono">{activeAlerts.length} Active</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="text-emerald-700 dark:text-emerald-400">All Clear</span>
+                </>
+              )}
+            </div>
+          </Link>
+
+          {/* Project Phase */}
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+              Project Milestone
+            </span>
+            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+              Phase {currentPhase.phaseNumber}: {currentPhase.status}
+            </div>
           </div>
         </div>
-
-        {/* Device Last Seen */}
-        <div
-          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs cursor-help"
-          title={formatExactDateTime(lastSyncTime)}
-        >
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-            Device Last Seen
-          </span>
-          <div className="text-xs sm:text-sm font-bold font-mono">
-            {isOffline || !lastSyncTime ? (
-              <span className="text-rose-600 dark:text-rose-400">
-                Offline ({lastSyncTime ? formatRelativeTime(lastSyncTime) : "Never"})
-              </span>
-            ) : isStale ? (
-              <span className="text-amber-600 dark:text-amber-400">
-                Stale ({formatRelativeTime(lastSyncTime)})
-              </span>
-            ) : (
-              <span className="text-emerald-700 dark:text-emerald-400">
-                Online ({formatRelativeTime(lastSyncTime)})
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Active Alerts */}
-        <Link
-          href="/alerts"
-          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 transition-colors block"
-        >
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-            Active Alerts
-          </span>
-          <div className="text-xs sm:text-sm font-bold flex items-center space-x-1.5">
-            {activeAlerts.length > 0 ? (
-              <>
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-                <span className="text-rose-600 font-mono">{activeAlerts.length} Active</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span className="text-emerald-700 dark:text-emerald-400">All Clear</span>
-              </>
-            )}
-          </div>
-        </Link>
-
-        {/* Project Phase */}
-        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-            College Project Phase
-          </span>
-          <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-            Phase {currentPhase.phaseNumber}: {currentPhase.status}
-          </div>
-        </div>
-      </div>
 
       {/* Operating Status Banner Card */}
       <OperatingModeCard
@@ -285,5 +291,6 @@ export default function DashboardOverviewPage() {
       {/* 5. Overview Order Item 5: Telemetry Log Table */}
       <LatestReadingsTable readings={history} />
     </div>
-  );
+  </>
+);
 }

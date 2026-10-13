@@ -1,14 +1,14 @@
 {
-  "name": "Solar Dryer IoT Monitor with PCM Storage",
-  "short_name": "Solar Dryer",
-  "description": "Monitoring dashboard and installable PWA for an ESP32 solar dryer with PCM thermal storage",
+  "name": "Agni Sakthi - Solar Dryer IoT Monitor",
+  "short_name": "Agni Sakthi",
+  "description": "Agni Sakthi - IoT Solar Dryer with Phase Change Material Thermal Storage",
   "start_url": "/",
   "id": "/",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#059669",
   "background_color": "#0f172a",
-  "categories": ["utilities", "productivity", "education"],
+  "categories": ["utilities", "productivity", "iot"],
   "icons": [
     {
       "src": "/icons/icon-192x192.svg",

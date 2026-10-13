@@ -42,7 +42,7 @@ export function ProjectStatusCard({ phases }: ProjectStatusCardProps) {
               Project Development Roadmap & Verification Status
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Honest status tracking for college engineering evaluation and final report
+              System implementation roadmap and component verification status
             </p>
           </div>
         </div>

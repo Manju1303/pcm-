@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseServer();
     if (supabase) {
       await supabase.from("night_tests").insert({
-        device_id: "solar-dryer-01",
+        device_id: process.env.DEFAULT_DEVICE_ID || "agni-sakthi-01",
         start_time: startTime,
         end_time: endTime,
         duration_minutes: durationMinutes,

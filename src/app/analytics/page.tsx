@@ -160,20 +160,26 @@ function AnalyticsContent() {
   const plateauPcm = pcmConfig?.phaseChangeTempC ?? 50.0;
 
   return (
-    <div className="space-y-6">
-      {/* Title & Range Controls */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <LineChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Thermal Analytics & Multi-Range History
-            </h2>
+    <>
+      <title>Thermal Analytics | Agni Sakthi</title>
+      <meta
+        name="description"
+        content="Historical temperature analytics, multi-range trend analysis, and CSV export for Agni Sakthi solar dryer."
+      />
+      <div className="space-y-6">
+        {/* Title & Range Controls */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <LineChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                Thermal Analytics & Multi-Range History
+              </h1>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Statistical trends, diurnal curves, and sensor frame analytics.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Min, avg, max trends, dashed limit lines, and gap handling for missing sensor frames.
-          </p>
-        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Range Buttons (Synced with URL) */}
@@ -412,7 +418,8 @@ function AnalyticsContent() {
         )}
       </div>
     </div>
-  );
+  </>
+);
 }
 
 export default function HistoricalAnalyticsPage() {

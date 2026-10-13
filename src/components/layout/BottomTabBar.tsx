@@ -108,7 +108,7 @@ export function BottomTabBar() {
           {/* Sheet Content */}
           <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl border-t border-slate-200 dark:border-slate-800 p-5 shadow-2xl max-h-[85vh] overflow-y-auto pb-safe">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">System Navigation</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Agni Sakthi - System Navigation</h3>
               <button
                 type="button"
                 onClick={() => setShowMoreSheet(false)}

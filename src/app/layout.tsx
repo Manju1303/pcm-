@@ -9,16 +9,16 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Solar Dryer IoT",
-    default: "Solar Dryer IoT | PCM Thermal Storage Monitor",
+    template: "%s | Agni Sakthi",
+    default: "Agni Sakthi | Solar Dryer IoT",
   },
   description:
-    "Monitoring dashboard and installable PWA for an ESP32 solar dryer with PCM thermal storage",
+    "Agni Sakthi - Monitoring dashboard and installable PWA for an ESP32 solar dryer with PCM thermal storage",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Solar Dryer",
+    title: "Agni Sakthi",
   },
   icons: {
     icon: "/icons/icon-192x192.svg",
@@ -48,7 +48,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Solar Dryer" />
+        <meta name="apple-mobile-web-app-title" content="Agni Sakthi" />
       </head>
       <body className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white pb-16 md:pb-0">
         <TelemetryProvider>
@@ -63,7 +63,7 @@ export default function RootLayout({
           </div>
           <BottomTabBar />
           <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-3 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-            IoT-Based Solar Dryer with Phase Change Material (PCM) Thermal Storage • ESP32 Controller
+            Agni Sakthi • Solar Dryer with Phase Change Material (PCM) Thermal Storage
           </footer>
         </TelemetryProvider>
       </body>

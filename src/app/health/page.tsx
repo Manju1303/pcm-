@@ -93,10 +93,10 @@ export default function SensorHealthPage() {
 
   return (
     <>
-      <title>Sensor Health & Probe Diagnostics | Solar Dryer IoT</title>
+      <title>Sensor Health | Agni Sakthi</title>
       <meta
         name="description"
-        content="DS18B20 1-Wire probe diagnostics, ROM address assignment, fault detection logs, and hardware fail-safe status."
+        content="Agni Sakthi DS18B20 1-Wire probe diagnostics, ROM address assignment, and hardware fail-safe status."
       />
 
       <div className="space-y-6">
@@ -107,11 +107,11 @@ export default function SensorHealthPage() {
               <div className="flex items-center space-x-2">
                 <Cpu className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                  Hardware Controller & Sensor Health Diagnostics
+                  Sensor Health & Hardware Diagnostics
                 </h1>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                DS18B20 multi-drop 1-Wire bus probe monitoring, ROM role mapping, fail-safe buzzer telemetry, and power subsystem status.
+                Real-time 1-Wire multi-drop probe telemetry, ROM mapping, and controller status.
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -126,18 +126,6 @@ export default function SensorHealthPage() {
                 {isOnline && !isStale ? "Controller Active" : "Controller Offline"}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Probe Specification Honesty Banner */}
-        <div className="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 p-4 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
-          <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <div className="font-semibold">Sensor Specification Notice: DS18B20 (assumed - confirm)</div>
-            <p className="text-amber-800 dark:text-amber-300">
-              The firmware and communication bus are designed for Dallas/Maxim DS18B20 1-Wire digital probes.
-              <strong> If your probes are not DS18B20, wiring and firmware must change.</strong> Verify your physical probe marking before conducting thermal runs.
-            </p>
           </div>
         </div>
 

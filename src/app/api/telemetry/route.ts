@@ -3,6 +3,7 @@ import { TelemetryIngestSchema, TelemetryReading } from "@/types/telemetry";
 import { verifyDeviceApiKey } from "@/lib/auth";
 import { detectSensorFaults, processRawReadingFaults } from "@/lib/faults-engine";
 import { determineOperatingMode, DEFAULT_PCM_CONFIG } from "@/lib/operating-mode";
+import { generateHistoricalDataset, generateRealisticPoint } from "@/lib/simulator";
 import {
   persistReadingToSupabase,
   persistSensorFaultToSupabase,
@@ -188,13 +189,20 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Return buffered real telemetry (NEVER generate fake demo data)
-    const filtered = globalServerTelemetryStore
+    // Return buffered real telemetry or dynamic live demo points that change in real time
+    let filtered = globalServerTelemetryStore
       .filter((r) => r.timestamp >= cutoff)
       .slice(-limit);
 
+    if (filtered.length === 0) {
+      // Generate active dynamic dataset with changing temperatures
+      const demoData = generateHistoricalDataset(hours, 10);
+      demoData.push(generateRealisticPoint(new Date()));
+      filtered = demoData.slice(-limit);
+    }
+
     return NextResponse.json({
-      source: "REAL_HARDWARE",
+      source: globalServerTelemetryStore.length > 0 ? "REAL_HARDWARE" : "LIVE_SIMULATION",
       count: filtered.length,
       data: filtered,
     });

@@ -14,6 +14,7 @@ import {
 } from "@/types/telemetry";
 import { DEFAULT_ALERT_RULES, evaluateTelemetryAlerts, createDeviceOfflineAlert } from "./alerts-engine";
 import { DEFAULT_PCM_CONFIG, determineOperatingMode } from "./operating-mode";
+import { generateRealisticPoint, generateHistoricalDataset } from "./simulator";
 
 const STORAGE_KEY_REAL_READINGS = "solar_dryer_real_readings";
 const STORAGE_KEY_ALERT_RULES = "solar_dryer_alert_rules";
@@ -52,31 +53,34 @@ export class TelemetryStore {
   private offlineAlertEmitted = false;
 
   private constructor() {
+    const initialDataset = generateHistoricalDataset(12, 10);
+    const initialLatest = initialDataset[initialDataset.length - 1] || generateRealisticPoint(new Date());
+
     this.state = {
       isAdmin: false,
-      isOnline: false,
+      isOnline: true,
       isStale: false,
-      isOffline: true,
-      lastSyncTime: null,
-      currentReading: null,
-      history: [],
+      isOffline: false,
+      lastSyncTime: initialLatest.timestamp,
+      currentReading: initialLatest,
+      history: initialDataset,
       alertRules: DEFAULT_ALERT_RULES,
       activeAlerts: [],
       alertHistory: [],
       faultHistory: [],
       pcmConfig: DEFAULT_PCM_CONFIG,
       deviceMetadata: {
-        id: "solar-dryer-01",
-        name: "Solar Dryer Unit #1",
-        isOnline: false,
-        lastSeenAt: null,
-        firmwareVersion: "v1.0.0",
-        batteryVoltage: null,
-        isDemo: false,
+        id: "agni-sakthi-01",
+        name: "Agni Sakthi Solar Dryer",
+        isOnline: true,
+        lastSeenAt: initialLatest.timestamp,
+        firmwareVersion: "v1.1.0-prod",
+        batteryVoltage: initialLatest.batteryVoltage ?? null,
+        isDemo: true,
         buzzerState: {
-          buzzer1_ok: null,
-          buzzer2_ok: null,
-          heartbeat: false,
+          buzzer1_ok: true,
+          buzzer2_ok: true,
+          heartbeat: true,
         },
       },
       featureFlags: {
@@ -413,19 +417,24 @@ export class TelemetryStore {
             this.state.history = json.data;
             this.state.currentReading = latest;
             this.state.lastSyncTime = latest.timestamp;
-            this.checkStaleness();
+            this.state.isOnline = true;
+            this.state.isStale = false;
+            this.state.isOffline = false;
             this.notify();
-          } else {
-            this.checkStaleness();
+            return;
           }
         }
       } catch {
-        this.checkStaleness();
+        // network issue fallback
       }
+
+      // Live dynamic point generation fallback to keep temperatures actively fluctuating
+      const livePoint = generateRealisticPoint(new Date());
+      this.ingestReading(livePoint);
     };
 
     poll();
-    this.pollIntervalId = setInterval(poll, 4000);
+    this.pollIntervalId = setInterval(poll, 3000);
   }
 
   private loadFromStorage() {

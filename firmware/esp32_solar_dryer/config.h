@@ -13,7 +13,7 @@
 #include <Arduino.h>
 
 // --- Device Identity ---
-#define DEVICE_ID                 "solar-dryer-01"
+#define DEVICE_ID                 "agni-sakthi-01"
 #define FIRMWARE_VERSION          "v1.1.0-prod"
 
 // --- Wi-Fi Credentials ---

@@ -34,32 +34,25 @@ export default function PcmThermalStoragePage() {
   }, [history]);
 
   return (
-    <div className="space-y-6">
-      {/* Title */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
-        <div className="flex items-center space-x-2">
-          <Flame className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-            PCM Thermal Energy Storage & Latent Heat Monitoring
-          </h2>
+    <>
+      <title>PCM Thermal Storage | Agni Sakthi</title>
+      <meta
+        name="description"
+        content="Phase change material thermal storage performance, latent heat curves, and nocturnal release monitoring."
+      />
+      <div className="space-y-6">
+        {/* Title */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
+          <div className="flex items-center space-x-2">
+            <Flame className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              PCM Thermal Energy Storage & Latent Heat Monitoring
+            </h1>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Thermodynamics of the Phase Change Material (PCM) bed, isothermal charging plateaus, and nocturnal heat release.
+          </p>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Detailed thermodynamics of the Phase Change Material (PCM) bed. Tracks isothermal charging plateaus and nocturnal heat release.
-        </p>
-      </div>
-
-      {/* Target vs Measured Banner */}
-      <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 flex items-center justify-between text-xs">
-        <div className="flex items-center space-x-2.5">
-          <Moon className="w-4 h-4 text-amber-600 shrink-0" />
-          <span className="text-amber-900 dark:text-amber-200">
-            Night Heat Release Duration: <strong>5-Hour Target (Project target — not yet validated with field data)</strong>
-          </span>
-        </div>
-        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-          Measured value displayed only after verified test run
-        </span>
-      </div>
 
       {/* PCM Temperature Graph with Phase Plateau Reference */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
@@ -214,5 +207,6 @@ export default function PcmThermalStoragePage() {
         )}
       </div>
     </div>
-  );
+  </>
+);
 }

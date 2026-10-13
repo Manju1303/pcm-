@@ -61,29 +61,6 @@ export function PcmThermalExplainer({
 
   return (
     <div className="space-y-6">
-      {/* 1. Thermodynamic Notice: Temperature alone cannot measure State of Charge */}
-      <div className="rounded-xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/60 dark:bg-amber-950/40 p-5 shadow-xs">
-        <div className="flex items-start space-x-3.5">
-          <div className="p-2.5 rounded-lg bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 shrink-0">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <div className="space-y-2 text-xs">
-            <h4 className="text-sm font-bold text-amber-900 dark:text-amber-100">
-              Thermodynamic Notice: Temperature vs. Latent Heat Storage
-            </h4>
-            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              In phase change materials (PCMs) such as <strong>{config.materialType}</strong>, heat absorption and release during phase change occurs isothermally (at a nearly constant melting range of <strong>{config.meltingMinC}°C - {config.meltingMaxC}°C</strong>).
-            </p>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
-              Notice: Temperature alone cannot measure state of charge. A probe reading 50.0°C cannot distinguish whether the PCM is 10% molten or 95% molten without calorimetric energy balance.
-            </p>
-            <div className="p-2 rounded bg-amber-100/70 dark:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 font-mono">
-              Night Duration: <strong>5 Hours is a project TARGET, not a verified experimental result</strong> until measured data is recorded.
-            </div>
-          </div>
-        </div>
-      </div>
-
       {saveSuccess && (
         <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -91,7 +68,7 @@ export function PcmThermalExplainer({
         </div>
       )}
 
-      {/* 2. Calibration & Theoretical Latent Storage Model */}
+      {/* Calibration & Theoretical Latent Storage Model */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div className="flex items-center space-x-2.5">
@@ -101,7 +78,7 @@ export function PcmThermalExplainer({
                 PCM Physical Parameters & Theoretical Latent Capacity
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Latent capacity computed from mass and enthalpy of fusion (verify against manufacturer datasheet)
+                Latent capacity computed from mass and enthalpy of fusion
               </p>
             </div>
           </div>
@@ -120,7 +97,7 @@ export function PcmThermalExplainer({
           <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
-                PCM Material Name <span className="text-[10px] text-amber-600 font-mono">(verify against datasheet)</span>
+                PCM Material Name
               </label>
               <input
                 type="text"
@@ -148,7 +125,7 @@ export function PcmThermalExplainer({
 
             <div>
               <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
-                Latent Heat of Fusion (kJ/kg) <span className="text-[10px] text-amber-600 font-mono">(verify datasheet)</span>
+                Latent Heat of Fusion (kJ/kg)
               </label>
               <input
                 type="number"

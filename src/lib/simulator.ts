@@ -1,91 +1,73 @@
 import { TelemetryReading, OperatingMode } from "@/types/telemetry";
 
 /**
- * Realistic Solar Dryer Physics Simulator
- * Simulates real thermodynamic behavior:
- * - Diurnal solar irradiance curve
- * - Solar air collector heating Trays (35°C to 58°C)
- * - PCM phase change plateau (~49°C - 51°C melting point)
- * - Latent heat discharge at night (holding Trays above ambient for ~5 hours)
- * - Realistic thermocouple measurement noise
+ * Agni Sakthi Solar Dryer - Realistic Live Physics & Demo Simulator
+ * Provides realistic fluctuating temperature telemetry:
+ * - Tray 1 (Upper Deck): 49.0°C - 53.5°C
+ * - Tray 2 (Lower Deck): 45.0°C - 49.5°C
+ * - PCM Thermal Core: 49.5°C - 52.0°C (Plateau near paraffin melting point ~50°C)
+ * - Battery Voltage: 12.6V - 13.2V
+ * Dynamically fluctuates over time so dials, charts, and metrics are active and lively.
  */
-export function generateRealisticPoint(date: Date): TelemetryReading {
+export function generateRealisticPoint(date: Date = new Date()): TelemetryReading {
+  const t = date.getTime();
   const hours = date.getHours() + date.getMinutes() / 60;
 
-  // Diurnal solar intensity factor (0 at night, peaks at 1.0 around 13:00)
-  let solarFactor = 0;
-  if (hours >= 6.5 && hours <= 18.0) {
-    solarFactor = Math.sin(((hours - 6.5) / 11.5) * Math.PI);
-  }
+  // Day factor for historical trends
+  const isDay = hours >= 7 && hours <= 18;
+  const solarNorm = isDay ? Math.sin(((hours - 7) / 11) * Math.PI) : 0;
 
-  // Base ambient temperature (24°C at night, 32°C at peak day)
-  const ambientTemp = 24.0 + 8.0 * Math.sin(((hours - 4) / 24) * 2 * Math.PI);
+  // Dynamic multi-frequency oscillations for visible, organic live temperature fluctuations
+  const osc1 = Math.sin(t / 2500) * 0.45 + Math.cos(t / 5500) * 0.3;
+  const osc2 = Math.cos(t / 3000) * 0.35 + Math.sin(t / 6800) * 0.25;
+  const oscPcm = Math.sin(t / 4200) * 0.22 + Math.cos(t / 9500) * 0.18;
 
-  // Solar collector heating trays
-  const solarHeatingEffect = solarFactor * 26.0;
+  // Target operational baseline:
+  // Tray 1: Upper deck hot airflow (~50.5 - 54.5°C)
+  const tray1Temp = Number((50.5 + (solarNorm * 3.2) + osc1).toFixed(1));
+  // Tray 2: Lower deck exhaust flow (~46.5 - 50.2°C)
+  const tray2Temp = Number((46.8 + (solarNorm * 2.5) + osc2).toFixed(1));
+  // PCM Thermal Core: Latent heat storage plateau (~49.8 - 52.2°C)
+  const pcmTemp = Number((50.2 + (solarNorm * 1.5) + oscPcm).toFixed(1));
 
-  // PCM thermal state calculation
-  // Daytime (7 to 17): PCM charges up to ~52°C and stays around phase plateau
-  // Nighttime (18 to 23): PCM slowly discharges latent heat maintaining ~44°C - 48°C
-  // Late night (0 to 6): PCM drops towards ambient
-  let pcmTemp = ambientTemp;
-  let tray1BonusFromPcm = 0;
-  let tray2BonusFromPcm = 0;
-  let mode: OperatingMode = "Idle";
+  // Battery voltage: ~12.7V with subtle ADC noise
+  const batteryVoltage = Number((12.65 + Math.sin(t / 14000) * 0.12).toFixed(2));
 
-  if (hours >= 7 && hours < 17) {
-    // Charging phase
-    // PCM absorbs sensible heat then plateaus around 50°C
-    const pcmTarget = 28.0 + solarFactor * 24.0;
-    // Dampen rise near phase change (48 - 52 °C)
-    pcmTemp = pcmTarget > 48.0 ? 49.0 + (pcmTarget - 48.0) * 0.25 : pcmTarget;
-    if (pcmTemp >= 46.0 && solarFactor > 0.4) {
-      mode = "PCM Charging";
-    } else if (solarFactor > 0.2) {
-      mode = "Daytime Drying";
-    } else {
-      mode = "Idle";
-    }
-  } else if (hours >= 17 && hours <= 23) {
-    // Discharging phase: Nighttime Heat Release
-    // PCM releases latent heat stored in paraffin wax (holding ~46°C - 49°C)
-    const dischargeHour = hours - 17; // 0 to 6 hours
-    pcmTemp = Math.max(ambientTemp + 4.0, 50.0 - dischargeHour * 1.8);
-    tray1BonusFromPcm = Math.max(0, (pcmTemp - ambientTemp) * 0.45);
-    tray2BonusFromPcm = Math.max(0, (pcmTemp - ambientTemp) * 0.40);
+  // Determine operating status
+  let mode: OperatingMode = "PCM Charging";
+  if (pcmTemp >= 49.5 && tray1Temp >= 48.0) {
+    mode = "PCM Charging";
+  } else if (pcmTemp > ((tray1Temp + tray2Temp) / 2 + 1.5)) {
     mode = "Nighttime Heat Release";
+  } else if (tray1Temp >= 40.0) {
+    mode = "Daytime Drying";
   } else {
-    // Early morning cool down
-    pcmTemp = ambientTemp + 1.5;
     mode = "Idle";
   }
 
-  // Micro sensor noise (±0.15°C)
-  const noise1 = (Math.sin(date.getTime() / 15000) * 0.15);
-  const noise2 = (Math.cos(date.getTime() / 17000) * 0.18);
-  const noisePcm = (Math.sin(date.getTime() / 25000) * 0.1);
-
-  // Tray 1 is closer to collector outlet, Tray 2 has slight gradient
-  const tray1Temp = Number((ambientTemp + solarHeatingEffect + tray1BonusFromPcm + noise1).toFixed(1));
-  const tray2Temp = Number((ambientTemp + solarHeatingEffect * 0.92 + tray2BonusFromPcm + noise2).toFixed(1));
-  const finalPcmTemp = Number((pcmTemp + noisePcm).toFixed(1));
-
-  // Battery voltage simulation (12V nominal solar battery: 13.8V in full sun, 12.3V at night)
-  const batteryVoltage = Number((12.2 + solarFactor * 1.8 + Math.sin(date.getTime() / 50000) * 0.05).toFixed(2));
-
   return {
-    id: `demo-${date.getTime()}`,
-    deviceId: "solar-dryer-01",
+    id: `live-demo-${t}`,
+    deviceId: "agni-sakthi-01",
     timestamp: date.toISOString(),
     temperatures: {
       tray1: tray1Temp,
       tray2: tray2Temp,
-      pcm: finalPcmTemp,
+      pcm: pcmTemp,
     },
     sensors: {
       tray1: "ok",
       tray2: "ok",
       pcm: "ok",
+    },
+    romAddresses: {
+      tray1: "28FF641E831704AD",
+      tray2: "28FF641E831704AE",
+      pcm: "28FF641E831704AF",
+    },
+    buzzerState: {
+      buzzer1_ok: true,
+      buzzer2_ok: true,
+      heartbeat: true,
     },
     batteryVoltage,
     operatingStatus: mode,
@@ -94,7 +76,7 @@ export function generateRealisticPoint(date: Date): TelemetryReading {
 }
 
 /**
- * Generates an array of historical points over a given number of hours
+ * Generates historical dataset over the specified hours with smooth realistic curves
  */
 export function generateHistoricalDataset(hoursBack: number = 24, stepMinutes: number = 10): TelemetryReading[] {
   const points: TelemetryReading[] = [];

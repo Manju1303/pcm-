@@ -120,9 +120,9 @@ void setup() {
     display.setTextColor(SSD1306_WHITE);
     display.setTextSize(1);
     display.setCursor(10, 15);
-    display.println(F("Solar Dryer IoT"));
+    display.println(F("Agni Sakthi"));
     display.setCursor(10, 30);
-    display.println(F("PCM Thermal Monitor"));
+    display.println(F("Solar Dryer IoT"));
     display.setCursor(10, 48);
     display.println(F("Initializing..."));
     display.display();
@@ -406,7 +406,7 @@ void updateOledDisplay() {
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.print(F("SOLAR DRYER"));
+  display.print(F("AGNI SAKTHI"));
 
   // Wi-Fi indicator
   display.setCursor(85, 0);

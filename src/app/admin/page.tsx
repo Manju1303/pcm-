@@ -117,7 +117,7 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <>
-        <title>Admin Login & Passcode Authentication | Solar Dryer IoT</title>
+        <title>Admin Portal | Agni Sakthi</title>
         <meta
           name="description"
           content="Administrator authentication portal for threshold management and project roadmap editing."
@@ -169,7 +169,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <title>Admin Console & Roadmap Management | Solar Dryer IoT</title>
+      <title>Admin Console | Agni Sakthi</title>
       <meta
         name="description"
         content="Administrator dashboard for project status milestones, hardware buzzer diagnostics, and system configuration."
@@ -200,14 +200,14 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Item 3: Project Status Phase Editor */}
+        {/* Development Roadmap Editor */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center space-x-2">
               <Milestone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <div>
                 <h2 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                  Project Status & College Evaluation Roadmap (Item 3)
+                  Development Roadmap & Milestones
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Edit phase status and technical notes stored in Supabase. These display read-only on the Overview dashboard.
@@ -286,12 +286,12 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Item 5: Test Alert Buzzer Diagnostics */}
+        {/* Test Alert Buzzer Diagnostics */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
           <div className="flex items-center space-x-2">
             <Volume2 className="w-5 h-5 text-amber-500" />
             <h2 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-              Hardware Local Buzzer Diagnostics (Item 5)
+              Hardware Local Buzzer Diagnostics
             </h2>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">

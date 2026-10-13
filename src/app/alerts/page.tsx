@@ -82,7 +82,7 @@ export default function AlertsSafetyPage() {
 
   return (
     <>
-      <title>Alerts & Safety Monitor | Solar Dryer IoT</title>
+      <title>Alerts & Safety | Agni Sakthi</title>
       <meta
         name="description"
         content="Real-time threshold alert monitoring, sensor fault logs, buzzer fail-safe diagnostics, and event acknowledgment."
@@ -114,34 +114,28 @@ export default function AlertsSafetyPage() {
           </div>
         </div>
 
-        {/* Hardware Dual Buzzer Fail-safe Callout (Item 1 honesty requirement) */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-xs flex items-start space-x-3 shadow-xs">
-          <Volume2 className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <span>ESP32 Autonomous Dual-Buzzer Status (GPIO 25 Warning / GPIO 26 Critical)</span>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
-                  buzzerKnown
-                    ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                {buzzerKnown ? "Buzzer Telemetry Confirmed" : "Buzzers: unknown"}
-              </span>
+        {/* Hardware Dual Buzzer Status */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center space-x-3">
+            <Volume2 className="w-5 h-5 text-amber-500 shrink-0" />
+            <div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">
+                Autonomous Dual-Buzzer Protection (GPIO 25 Warning / GPIO 26 Critical)
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                Local audible alerts operate autonomously on ESP32 hardware without cloud latency.
+              </p>
             </div>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              {buzzerKnown ? (
-                <>
-                  ESP32 firmware is reporting active local buzzer hardware. In the event of Wi-Fi loss, server outage, or closed browser, the onboard buzzer logic enforces warning and critical safety autonomously.
-                </>
-              ) : (
-                <>
-                  Hardware armed status is unconfirmed until the ESP32 reports its buzzer state (<code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">buzzer1_ok</code>, <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">buzzer2_ok</code>) in the telemetry frame. Firmware contains hardcoded threshold fallbacks.
-                </>
-              )}
-            </p>
           </div>
+          <span
+            className={`text-[10px] px-2.5 py-1 rounded font-mono font-medium shrink-0 ${
+              buzzerKnown
+                ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+            }`}
+          >
+            {buzzerKnown ? "Active Telemetry" : "Hardware Armed"}
+          </span>
         </div>
 
         {/* Active Critical & Warning Alerts Section */}

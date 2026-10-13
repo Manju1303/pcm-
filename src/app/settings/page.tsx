@@ -104,7 +104,7 @@ export default function SystemSettingsPage() {
 
   return (
     <>
-      <title>System Settings & Device Configuration | Solar Dryer IoT</title>
+      <title>Settings | Agni Sakthi</title>
       <meta
         name="description"
         content="Configure ESP32 alarm thresholds, PCM thermal transition points, feature flags, and secure device API credentials."
