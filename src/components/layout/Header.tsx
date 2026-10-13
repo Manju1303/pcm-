@@ -45,10 +45,9 @@ export function Header() {
       const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
       setIsIos(isIosDevice);
 
-      // Detect theme preference
+      // Default to Light theme per user request
       const savedTheme = localStorage.getItem("theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      if (savedTheme === "dark") {
         setIsDark(true);
         document.documentElement.classList.add("dark");
       } else {
@@ -134,21 +133,25 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand & Project Identity */}
           <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xs">
-                <Sun className="w-5 h-5 text-amber-200" />
+            <Link href="/" className="flex items-center space-x-3 group">
+              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400/20 via-orange-500/10 to-emerald-500/10 p-0.5 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <img
+                  src="/icons/logo.svg"
+                  alt="Agni Sakthi Logo"
+                  className="w-9 h-9 object-contain drop-shadow-xs"
+                />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 tracking-tight">
                     Agni Sakthi
                   </span>
-                  <span className="hidden sm:inline-block px-2 py-0.2 text-[10px] font-mono uppercase tracking-wider rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60">
                     Solar Dryer
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
-                  IoT Solar Dryer • PCM Thermal Storage
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
+                  IoT Solar Thermal Dryer • PCM Energy Storage
                 </p>
               </div>
             </Link>

@@ -25,10 +25,12 @@ export default function LiveMonitoringPage() {
   const t2 = currentReading?.sensors.tray2 === "ok" ? currentReading.temperatures.tray2 : null;
   const pcm = currentReading?.sensors.pcm === "ok" ? currentReading.temperatures.pcm : null;
 
-  const warnTray = thresholds?.tray1Warn ?? 58.0;
-  const critTray = thresholds?.tray1Crit ?? 68.0;
-  const warnPcm = thresholds?.pcmWarn ?? 60.0;
-  const critPcm = thresholds?.pcmCrit ?? 72.0;
+  const warnTray1 = thresholds?.tray1Warn ?? 82.0;
+  const critTray1 = thresholds?.tray1Crit ?? 88.0;
+  const warnTray2 = thresholds?.tray2Warn ?? 80.0;
+  const critTray2 = thresholds?.tray2Crit ?? 86.0;
+  const warnPcm = thresholds?.pcmWarn ?? 54.0;
+  const critPcm = thresholds?.pcmCrit ?? 58.0;
 
   const GaugeMeter = ({
     title,
@@ -217,11 +219,11 @@ export default function LiveMonitoringPage() {
           title="Tray 1 - Upper Deck"
           subtitle="Collector Hot Air Inlet"
           value={t1}
-          accentColor="#0284c7"
+          accentColor="#f97316"
           min={20}
-          max={75}
-          warn={warnTray}
-          crit={critTray}
+          max={90}
+          warn={warnTray1}
+          crit={critTray1}
           isStaleOrOffline={isStale || isOffline}
         />
         <GaugeMeter
@@ -230,9 +232,9 @@ export default function LiveMonitoringPage() {
           value={t2}
           accentColor="#6366f1"
           min={20}
-          max={75}
-          warn={warnTray}
-          crit={critTray}
+          max={90}
+          warn={warnTray2}
+          crit={critTray2}
           isStaleOrOffline={isStale || isOffline}
         />
         <GaugeMeter
@@ -241,7 +243,7 @@ export default function LiveMonitoringPage() {
           value={pcm}
           accentColor="#059669"
           min={20}
-          max={75}
+          max={65}
           warn={warnPcm}
           crit={critPcm}
           isStaleOrOffline={isStale || isOffline}

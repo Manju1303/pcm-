@@ -6,8 +6,8 @@
   "id": "/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#059669",
-  "background_color": "#0f172a",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
   "categories": ["utilities", "productivity", "iot"],
   "icons": [
     {

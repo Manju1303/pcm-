@@ -79,18 +79,18 @@ export function OperatingModeCard({
   const ModeIcon = details.icon;
 
   return (
-    <div className={`rounded-xl border p-5 ${details.cardBorder} shadow-xs transition-all duration-300`}>
+    <div className={`relative overflow-hidden rounded-2xl border p-5 ${details.cardBorder} shadow-sm backdrop-blur-xs transition-all duration-300`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs">
-            <ModeIcon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center space-x-3.5">
+          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+            <ModeIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold font-mono">
+            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold font-mono">
                 Operating Status
               </span>
-              <span className={`px-2.5 py-0.5 text-xs rounded-full border ${details.badgeColor}`}>
+              <span className={`px-2.5 py-0.5 text-xs rounded-full border shadow-2xs ${details.badgeColor}`}>
                 {details.title}
               </span>
             </div>
@@ -101,7 +101,7 @@ export function OperatingModeCard({
         </div>
 
         {/* Status Physics Diagnostic */}
-        <div className="sm:text-right text-xs bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 sm:max-w-xs shadow-2xs">
+        <div className="sm:text-right text-xs bg-white/90 dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 sm:max-w-xs shadow-2xs">
           <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center sm:justify-end space-x-1">
             <Info className="w-3 h-3 text-slate-400" />
             <span>Rule Evaluation:</span>

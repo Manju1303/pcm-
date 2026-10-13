@@ -84,7 +84,7 @@ export default function PcmThermalStoragePage() {
               <LineChart data={pcmChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="timeLabel" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} domain={[20, 75]} tickLine={false} tickFormatter={(v) => `${v}°`} />
+                <YAxis stroke="#94a3b8" fontSize={11} domain={[20, 85]} tickLine={false} tickFormatter={(v) => `${v}°`} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#ffffff",

@@ -1,57 +1,73 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#080e1a" />
+    <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
     </linearGradient>
-    <linearGradient id="solarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24" />
-      <stop offset="100%" stop-color="#f59e0b" />
+
+    <linearGradient id="agniFlame512" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="25%" stop-color="#fbbf24" />
+      <stop offset="55%" stop-color="#f97316" />
+      <stop offset="85%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#e11d48" />
     </linearGradient>
-    <linearGradient id="pcmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#047857" />
+
+    <radialGradient id="sunCore512" cx="50%" cy="65%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="35%" stop-color="#fef08a" stop-opacity="0.9" />
+      <stop offset="70%" stop-color="#fb923c" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#ea580c" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="pcmEnergy512" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#34d399" />
     </linearGradient>
-    <linearGradient id="trayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#0284c7" />
-    </linearGradient>
+
+    <filter id="softGlow512" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="20" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="ambientShadow512" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#ea580c" flood-opacity="0.3" />
+    </filter>
   </defs>
 
-  <!-- Background rounded plate -->
-  <rect width="512" height="512" rx="100" fill="url(#bgGrad)" />
-  <rect x="16" y="16" width="480" height="480" rx="88" fill="none" stroke="#1e293b" stroke-width="6" />
+  <!-- Outer Rounded Squircle Frame -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bgGrad512)" stroke="#e2e8f0" stroke-width="6" />
 
-  <!-- Sun Rays & Solar Glow -->
-  <circle cx="256" cy="130" r="48" fill="url(#solarGrad)" filter="drop-shadow(0 0 16px rgba(245, 158, 11, 0.6))" />
-  <g stroke="#f59e0b" stroke-width="8" stroke-linecap="round">
-    <line x1="256" y1="52" x2="256" y2="32" />
-    <line x1="256" y1="208" x2="256" y2="228" />
-    <line x1="178" y1="130" x2="158" y2="130" />
-    <line x1="334" y1="130" x2="354" y2="130" />
-    <line x1="201" y1="75" x2="187" y2="61" />
-    <line x1="311" y1="185" x2="325" y2="199" />
-    <line x1="201" y1="185" x2="187" y2="199" />
-    <line x1="311" y1="75" x2="325" y2="61" />
+  <!-- Subtle Ambient Glow Behind Flame -->
+  <circle cx="256" cy="270" r="140" fill="#fef08a" opacity="0.5" filter="url(#softGlow512)" />
+
+  <!-- PCM Thermal Storage Orbital Rings -->
+  <path d="M 160 350 C 130 300 140 230 185 180" stroke="url(#pcmEnergy512)" stroke-width="14" stroke-linecap="round" fill="none" opacity="0.85" />
+  <circle cx="160" cy="350" r="8" fill="#10b981" />
+  
+  <path d="M 352 350 C 382 300 372 230 327 180" stroke="url(#pcmEnergy512)" stroke-width="14" stroke-linecap="round" fill="none" opacity="0.85" />
+  <circle cx="352" cy="350" r="8" fill="#10b981" />
+
+  <!-- Dynamic Agni Solar Flame Droplet -->
+  <g filter="url(#ambientShadow512)">
+    <path d="M 256 96 
+             C 275 160 340 230 340 300 
+             C 340 365 295 408 256 408 
+             C 217 408 172 365 172 300 
+             C 172 230 237 160 256 96 Z" 
+          fill="url(#agniFlame512)" />
   </g>
 
-  <!-- Dryer Chamber Outline -->
-  <path d="M120 230 L392 230 L420 440 L92 440 Z" fill="#1e293b" stroke="#334155" stroke-width="8" stroke-linejoin="round" />
+  <!-- Inner Radiant Light Orb Droplet -->
+  <path d="M 256 160 
+           C 268 200 310 248 310 295 
+           C 310 340 280 370 256 370 
+           C 232 370 202 340 202 295 
+           C 202 248 244 200 256 160 Z" 
+        fill="url(#sunCore512)" />
 
-  <!-- Tray 1 -->
-  <rect x="136" y="260" width="240" height="24" rx="8" fill="url(#trayGrad)" />
-  <text x="256" y="277" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">TRAY 1</text>
-
-  <!-- Tray 2 -->
-  <rect x="136" y="306" width="240" height="24" rx="8" fill="url(#trayGrad)" />
-  <text x="256" y="323" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">TRAY 2</text>
-
-  <!-- PCM Thermal Storage Reservoir -->
-  <rect x="120" y="356" width="272" height="56" rx="12" fill="url(#pcmGrad)" stroke="#34d399" stroke-width="4" />
-  <text x="256" y="384" font-family="system-ui, sans-serif" font-size="16" font-weight="800" fill="#ffffff" text-anchor="middle">PCM THERMAL STORAGE</text>
-  <text x="256" y="402" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#a7f3d0" text-anchor="middle">LATENT HEAT RESERVOIR</text>
-
-  <!-- Base Feet -->
-  <rect x="130" y="440" width="24" height="24" rx="4" fill="#475569" />
-  <rect x="358" y="440" width="24" height="24" rx="4" fill="#475569" />
+  <!-- Central Thermal Spark -->
+  <circle cx="256" cy="300" r="28" fill="#ffffff" opacity="0.95" />
+  <circle cx="256" cy="300" r="16" fill="#fef08a" />
 </svg>

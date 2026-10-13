@@ -44,12 +44,12 @@ export function BottomTabBar() {
 
   return (
     <>
-      {/* Mobile Bottom Tab Bar (under 768px) */}
+      {/* Mobile Bottom Floating Pill Bar (inspired by modern reference design) */}
       <nav
         aria-label="Mobile navigation bar"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 pb-safe shadow-lg"
+        className="md:hidden fixed bottom-3 left-3 right-3 max-w-md mx-auto z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-full shadow-lg shadow-slate-900/5 px-1.5 py-1"
       >
-        <div className="flex items-center justify-around h-16 px-1">
+        <div className="flex items-center justify-around h-13">
           {PRIMARY_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = pathname === tab.href;
@@ -59,21 +59,21 @@ export function BottomTabBar() {
                 key={tab.href}
                 href={tab.href}
                 onClick={() => setShowMoreSheet(false)}
-                className={`flex flex-col items-center justify-center flex-1 h-full touch-target transition-colors relative ${
+                className={`flex flex-col items-center justify-center flex-1 h-full py-1 px-2 rounded-full transition-all relative ${
                   isActive
-                    ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-2xs"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                 }`}
               >
                 <div className="relative">
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                   {tab.badge !== undefined && tab.badge > 0 && (
                     <span className="absolute -top-1 -right-2 px-1 py-0.2 rounded-full text-[9px] font-bold font-mono bg-rose-500 text-white">
                       {tab.badge}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] mt-1">{tab.name}</span>
+                <span className="text-[10px] mt-0.5 tracking-tight font-medium">{tab.name}</span>
               </Link>
             );
           })}
@@ -84,14 +84,14 @@ export function BottomTabBar() {
             onClick={() => setShowMoreSheet(true)}
             aria-label="More navigation items"
             aria-expanded={showMoreSheet}
-            className={`flex flex-col items-center justify-center flex-1 h-full touch-target transition-colors ${
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 px-2 rounded-full transition-all ${
               isMoreActive || showMoreSheet
-                ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-2xs"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
-            <MoreHorizontal className="w-5 h-5" />
-            <span className="text-[10px] mt-1">More</span>
+            <MoreHorizontal className="w-4 h-4" />
+            <span className="text-[10px] mt-0.5 tracking-tight font-medium">More</span>
           </button>
         </div>
       </nav>

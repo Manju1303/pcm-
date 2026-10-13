@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: "Agni Sakthi",
   },
   icons: {
-    icon: "/icons/icon-192x192.svg",
+    icon: "/icons/logo.svg",
     apple: "/icons/icon-192x192.svg",
   },
 };
@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/icons/icon-192x192.svg" type="image/svg+xml" />
+        <link rel="icon" href="/icons/logo.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

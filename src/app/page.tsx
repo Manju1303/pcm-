@@ -90,12 +90,12 @@ export default function DashboardOverviewPage() {
   const tray2Trend = getTrendData("tray2");
   const pcmTrend = getTrendData("pcm");
 
-  const tray1Warn = thresholds?.tray1Warn ?? 58.0;
-  const tray1Crit = thresholds?.tray1Crit ?? 68.0;
-  const tray2Warn = thresholds?.tray2Warn ?? 58.0;
-  const tray2Crit = thresholds?.tray2Crit ?? 68.0;
-  const pcmWarn = thresholds?.pcmWarn ?? 60.0;
-  const pcmCrit = thresholds?.pcmCrit ?? 72.0;
+  const tray1Warn = thresholds?.tray1Warn ?? 82.0;
+  const tray1Crit = thresholds?.tray1Crit ?? 88.0;
+  const tray2Warn = thresholds?.tray2Warn ?? 80.0;
+  const tray2Crit = thresholds?.tray2Crit ?? 86.0;
+  const pcmWarn = thresholds?.pcmWarn ?? 54.0;
+  const pcmCrit = thresholds?.pcmCrit ?? 58.0;
 
   const trayAvg =
     currentReading && currentReading.temperatures.tray1 !== null && currentReading.temperatures.tray2 !== null
@@ -118,18 +118,18 @@ export default function DashboardOverviewPage() {
         {/* 1. Overview Order Item 1: 'System at a glance' row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Operating Mode Glance */}
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+          <div className="p-4 rounded-2xl border border-slate-200/80 bg-white/90 shadow-xs hover:shadow-sm transition-all">
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
               Chamber Mode
             </span>
-            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+            <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
               {currentReading?.operatingStatus ?? "Standby"}
             </div>
           </div>
 
           {/* Device Last Seen */}
           <div
-            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs cursor-help"
+            className="p-4 rounded-2xl border border-slate-200/80 bg-white/90 shadow-xs hover:shadow-sm transition-all cursor-help"
             title={formatExactDateTime(lastSyncTime)}
           >
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
@@ -137,15 +137,15 @@ export default function DashboardOverviewPage() {
             </span>
             <div className="text-xs sm:text-sm font-bold font-mono">
               {isOffline || !lastSyncTime ? (
-                <span className="text-rose-600 dark:text-rose-400">
+                <span className="text-rose-600">
                   Offline ({lastSyncTime ? formatRelativeTime(lastSyncTime) : "Never"})
                 </span>
               ) : isStale ? (
-                <span className="text-amber-600 dark:text-amber-400">
+                <span className="text-amber-600">
                   Stale ({formatRelativeTime(lastSyncTime)})
                 </span>
               ) : (
-                <span className="text-emerald-700 dark:text-emerald-400">
+                <span className="text-emerald-700">
                   Online ({formatRelativeTime(lastSyncTime)})
                 </span>
               )}
@@ -155,7 +155,7 @@ export default function DashboardOverviewPage() {
           {/* Active Alerts */}
           <Link
             href="/alerts"
-            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 transition-colors block"
+            className="p-4 rounded-2xl border border-slate-200/80 bg-white/90 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all block"
           >
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
               Active Alerts
@@ -169,18 +169,18 @@ export default function DashboardOverviewPage() {
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-700 dark:text-emerald-400">All Clear</span>
+                  <span className="text-emerald-700">All Clear</span>
                 </>
               )}
             </div>
           </Link>
 
           {/* Project Phase */}
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+          <div className="p-4 rounded-2xl border border-slate-200/80 bg-white/90 shadow-xs hover:shadow-sm transition-all">
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
               Project Milestone
             </span>
-            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+            <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
               Phase {currentPhase.phaseNumber}: {currentPhase.status}
             </div>
           </div>

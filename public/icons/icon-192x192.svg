@@ -1,28 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="192" height="192">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="192" height="192" fill="none">
   <defs>
     <linearGradient id="bgGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#080e1a" />
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
     </linearGradient>
-    <linearGradient id="solarGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24" />
-      <stop offset="100%" stop-color="#f59e0b" />
+
+    <linearGradient id="agniFlame192" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="25%" stop-color="#fbbf24" />
+      <stop offset="55%" stop-color="#f97316" />
+      <stop offset="85%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#e11d48" />
     </linearGradient>
-    <linearGradient id="pcmGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#047857" />
+
+    <radialGradient id="sunCore192" cx="50%" cy="65%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="35%" stop-color="#fef08a" stop-opacity="0.9" />
+      <stop offset="70%" stop-color="#fb923c" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#ea580c" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="pcmEnergy192" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#34d399" />
     </linearGradient>
-    <linearGradient id="trayGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#0284c7" />
-    </linearGradient>
+
+    <filter id="ambientShadow192" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#ea580c" flood-opacity="0.25" />
+    </filter>
   </defs>
 
-  <rect width="512" height="512" rx="90" fill="url(#bgGrad192)" />
-  <circle cx="256" cy="130" r="48" fill="url(#solarGrad192)" />
-  <path d="M120 230 L392 230 L420 440 L92 440 Z" fill="#1e293b" stroke="#334155" stroke-width="8" />
-  <rect x="136" y="260" width="240" height="24" rx="6" fill="url(#trayGrad192)" />
-  <rect x="136" y="306" width="240" height="24" rx="6" fill="url(#trayGrad192)" />
-  <rect x="120" y="356" width="272" height="56" rx="10" fill="url(#pcmGrad192)" />
-  <text x="256" y="392" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">PCM STORAGE</text>
+  <!-- Outer Rounded Squircle Frame -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bgGrad192)" stroke="#e2e8f0" stroke-width="6" />
+
+  <!-- PCM Thermal Storage Orbital Rings -->
+  <path d="M 160 350 C 130 300 140 230 185 180" stroke="url(#pcmEnergy192)" stroke-width="14" stroke-linecap="round" fill="none" opacity="0.85" />
+  <circle cx="160" cy="350" r="8" fill="#10b981" />
+  
+  <path d="M 352 350 C 382 300 372 230 327 180" stroke="url(#pcmEnergy192)" stroke-width="14" stroke-linecap="round" fill="none" opacity="0.85" />
+  <circle cx="352" cy="350" r="8" fill="#10b981" />
+
+  <!-- Dynamic Agni Solar Flame Droplet -->
+  <g filter="url(#ambientShadow192)">
+    <path d="M 256 96 
+             C 275 160 340 230 340 300 
+             C 340 365 295 408 256 408 
+             C 217 408 172 365 172 300 
+             C 172 230 237 160 256 96 Z" 
+          fill="url(#agniFlame192)" />
+  </g>
+
+  <!-- Inner Radiant Light Orb Droplet -->
+  <path d="M 256 160 
+           C 268 200 310 248 310 295 
+           C 310 340 280 370 256 370 
+           C 232 370 202 340 202 295 
+           C 202 248 244 200 256 160 Z" 
+        fill="url(#sunCore192)" />
+
+  <!-- Central Thermal Spark -->
+  <circle cx="256" cy="300" r="28" fill="#ffffff" opacity="0.95" />
+  <circle cx="256" cy="300" r="16" fill="#fef08a" />
 </svg>
