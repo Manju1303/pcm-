@@ -3,12 +3,14 @@
  * @brief Production ESP32 Firmware for IoT Solar Dryer with PCM Thermal Storage
  * 
  * Hardware features:
- * - 3x DS18B20 1-Wire Digital Temperature Probes (Tray 1, Tray 2, PCM)
+ * - 3x DS18B20 1-Wire Digital Temperature Probes (Tray 1, Tray 2, PCM) on shared GPIO 16 bus
+ * - 64-bit ROM Address reporting in JSON telemetry for web role mapping
+ * - Remote threshold synchronization via GET /api/device-config with hardcoded offline fallbacks
  * - 0.96" I2C SSD1306 OLED Display (128x64)
- * - Dual Buzzer Alert System (Transistor-driven, non-blocking with hysteresis)
- * - Optional Battery Voltage ADC measurement (Resistor divider)
+ * - Dual Buzzer Alert System (Transistor-driven, non-blocking with hysteresis on GPIO 25/26)
+ * - Buzzer state reporting (buzzer1_ok, buzzer2_ok, heartbeat) in telemetry frame
  * - Wi-Fi Telemetry Ingestion to Next.js / Supabase API endpoint with API Key Auth
- * - Standalone Local Operation resilience (buzzers and OLED work even when Wi-Fi is down)
+ * - Standalone Local Operation resilience (buzzers and OLED work with zero Wi-Fi)
  */
 
 #include <Arduino.h>
@@ -49,12 +51,28 @@ String statusTray1 = "disconnected";
 String statusTray2 = "disconnected";
 String statusPcm   = "disconnected";
 
+// Buzzer Hardware Status
+bool buzzer1Ok = true;
+bool buzzer2Ok = true;
+
+// Dynamic Operational Thresholds (initialized to hardcoded offline fallbacks)
+float tray1Warn = FALLBACK_TRAY1_WARN_HIGH;
+float tray1Crit = FALLBACK_TRAY1_CRIT_HIGH;
+float tray2Warn = FALLBACK_TRAY2_WARN_HIGH;
+float tray2Crit = FALLBACK_TRAY2_CRIT_HIGH;
+float pcmWarn   = FALLBACK_PCM_WARN_HIGH;
+float pcmCrit   = FALLBACK_PCM_CRIT_HIGH;
+float pcmChargeTrigger = FALLBACK_PCM_CHARGE_START;
+float pcmPlateau       = FALLBACK_PCM_PLATEAU;
+float dischargeDelta   = FALLBACK_DISCHARGE_DELTA;
+
 // Operating Mode
 String currentOperatingMode = "Idle";
 
 // Timing trackers
 unsigned long lastSensorReadTime  = 0;
 unsigned long lastTelemetryTime   = 0;
+unsigned long lastConfigFetchTime = 0;
 unsigned long lastOledRefreshTime = 0;
 unsigned long lastBuzzerAlertTime = 0;
 unsigned long buzzer1TurnOffTime  = 0;
@@ -67,13 +85,14 @@ const int   daylightOffset_sec = 0;
 
 // Helper function prototypes
 void discoverAndMapSensors();
-void printAddress(DeviceAddress deviceAddress);
+String formatAddressToHex(DeviceAddress deviceAddress);
 void readTemperatureSensors();
 void readBatteryVoltage();
 void evaluateOperatingStatus();
 void evaluateAlertsAndBuzzers();
 void updateOledDisplay();
 void sendTelemetryPayload();
+void fetchRemoteDeviceConfig();
 String getIso8601Timestamp();
 
 void setup() {
@@ -81,7 +100,7 @@ void setup() {
   delay(1000);
   Serial.println(F("\n======================================================="));
   Serial.println(F("ESP32 IoT Solar Dryer with PCM Thermal Storage Starting"));
-  Serial.println(F("Firmware Version: ") FIRMWARE_VERSION);
+  Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
   Serial.println(F("======================================================="));
 
   // 1. Initialize GPIOs
@@ -157,14 +176,20 @@ void loop() {
     updateOledDisplay();
   }
 
-  // 4. Periodic Telemetry Ingestion over Wi-Fi
+  // 4. Periodic Config Fetch from Server (Item 14)
+  if (WiFi.status() == WL_CONNECTED &&
+      (now - lastConfigFetchTime >= CONFIG_FETCH_INTERVAL_MS || lastConfigFetchTime == 0)) {
+    lastConfigFetchTime = now;
+    fetchRemoteDeviceConfig();
+  }
+
+  // 5. Periodic Telemetry Ingestion over Wi-Fi
   if (now - lastTelemetryTime >= TELEMETRY_INTERVAL_MS || lastTelemetryTime == 0) {
     lastTelemetryTime = now;
     if (WiFi.status() == WL_CONNECTED) {
       sendTelemetryPayload();
     } else {
-      Serial.println(F("[WIFI] Disconnected. Telemetry buffered locally."));
-      // Attempt reconnection
+      Serial.println(F("[WIFI] Disconnected. Running on hardcoded fallback thresholds."));
       if (WiFi.status() != WL_DISCONNECTED) {
         WiFi.reconnect();
       }
@@ -182,171 +207,203 @@ void discoverAndMapSensors() {
   Serial.printf("[1-WIRE] Detected %d DS18B20 probe(s) on bus GPIO %d\n", discoveredSensorsCount, PIN_ONE_WIRE_BUS);
 
   if (discoveredSensorsCount >= 1 && sensors.getAddress(addrTray1, 0)) {
-    Serial.print(F("[1-WIRE] Tray 1 Probe Address: "));
-    printAddress(addrTray1);
-    Serial.println();
+    Serial.printf("[1-WIRE] Tray 1 Probe ROM: %s\n", formatAddressToHex(addrTray1).c_str());
   }
   if (discoveredSensorsCount >= 2 && sensors.getAddress(addrTray2, 1)) {
-    Serial.print(F("[1-WIRE] Tray 2 Probe Address: "));
-    printAddress(addrTray2);
-    Serial.println();
+    Serial.printf("[1-WIRE] Tray 2 Probe ROM: %s\n", formatAddressToHex(addrTray2).c_str());
   }
   if (discoveredSensorsCount >= 3 && sensors.getAddress(addrPcm, 2)) {
-    Serial.print(F("[1-WIRE] PCM Probe Address:    "));
-    printAddress(addrPcm);
-    Serial.println();
+    Serial.printf("[1-WIRE] PCM Probe ROM:    %s\n", formatAddressToHex(addrPcm).c_str());
     sensorsMapped = true;
   } else {
     Serial.println(F("[WARNING] Fewer than 3 probes detected. Probes will report status accordingly."));
   }
 }
 
-void printAddress(DeviceAddress deviceAddress) {
+String formatAddressToHex(DeviceAddress deviceAddress) {
+  String hexStr = "";
   for (uint8_t i = 0; i < 8; i++) {
-    if (deviceAddress[i] < 16) Serial.print("0");
-    Serial.print(deviceAddress[i], HEX);
-    if (i < 7) Serial.print(":");
+    if (deviceAddress[i] < 16) hexStr += "0";
+    hexStr += String(deviceAddress[i], HEX);
   }
+  hexStr.toUpperCase();
+  return hexStr;
 }
 
 // ----------------------------------------------------------------------------
-// Read Sensors & Health Detection
+// Read DS18B20 Temperature Probes
 // ----------------------------------------------------------------------------
 void readTemperatureSensors() {
   sensors.requestTemperatures();
 
-  // Helper lambda for reading and status validation
-  auto processProbe = [](float rawVal, String &statusOut) -> float {
-    // DS18B20 returns DEVICE_DISCONNECTED_C (-127°C) or 85°C on power-on reset fault
-    if (rawVal == DEVICE_DISCONNECTED_C || rawVal < -55.0f || rawVal > 125.0f) {
-      statusOut = "disconnected";
-      return -999.0f;
-    } else if (rawVal == 85.0f) {
-      statusOut = "faulty";
-      return -999.0f;
-    } else {
-      statusOut = "ok";
-      return rawVal;
-    }
-  };
-
+  // Read Tray 1
   if (discoveredSensorsCount >= 1) {
     float raw = sensors.getTempC(addrTray1);
-    tempTray1 = processProbe(raw, statusTray1);
+    if (raw == DEVICE_DISCONNECTED_C || raw == -127.0f) {
+      statusTray1 = "disconnected";
+      tempTray1 = -999.0f;
+    } else if (raw == 85.0f) {
+      statusTray1 = "fault"; // Power-on reset condition
+      tempTray1 = raw;
+    } else {
+      statusTray1 = "ok";
+      tempTray1 = raw;
+    }
   } else {
     statusTray1 = "disconnected";
-    tempTray1 = -999.0f;
   }
 
+  // Read Tray 2
   if (discoveredSensorsCount >= 2) {
     float raw = sensors.getTempC(addrTray2);
-    tempTray2 = processProbe(raw, statusTray2);
+    if (raw == DEVICE_DISCONNECTED_C || raw == -127.0f) {
+      statusTray2 = "disconnected";
+      tempTray2 = -999.0f;
+    } else if (raw == 85.0f) {
+      statusTray2 = "fault";
+      tempTray2 = raw;
+    } else {
+      statusTray2 = "ok";
+      tempTray2 = raw;
+    }
   } else {
     statusTray2 = "disconnected";
-    tempTray2 = -999.0f;
   }
 
+  // Read PCM
   if (discoveredSensorsCount >= 3) {
     float raw = sensors.getTempC(addrPcm);
-    tempPcm = processProbe(raw, statusPcm);
+    if (raw == DEVICE_DISCONNECTED_C || raw == -127.0f) {
+      statusPcm = "disconnected";
+      tempPcm = -999.0f;
+    } else if (raw == 85.0f) {
+      statusPcm = "fault";
+      tempPcm = raw;
+    } else {
+      statusPcm = "ok";
+      tempPcm = raw;
+    }
   } else {
     statusPcm = "disconnected";
-    tempPcm = -999.0f;
   }
 
-  Serial.printf("[READINGS] Tray1: %.1f C (%s) | Tray2: %.1f C (%s) | PCM: %.1f C (%s)\n",
-                tempTray1, statusTray1.c_str(),
-                tempTray2, statusTray2.c_str(),
-                tempPcm, statusPcm.c_str());
+  Serial.printf("[TEMPS] Tray1: %.1f C (%s) | Tray2: %.1f C (%s) | PCM: %.1f C (%s)\n",
+    tempTray1, statusTray1.c_str(),
+    tempTray2, statusTray2.c_str(),
+    tempPcm,   statusPcm.c_str()
+  );
 }
 
+// ----------------------------------------------------------------------------
+// Read Solar Battery Voltage (GPIO 35)
+// ----------------------------------------------------------------------------
 void readBatteryVoltage() {
   int rawAdc = analogRead(PIN_BATTERY_VOLTAGE);
-  float pinVoltage = (rawAdc / ESP32_ADC_RESOLUTION) * ESP32_ADC_REFERENCE_VOLT;
-  batteryVoltage = pinVoltage * BATTERY_DIVIDER_RATIO;
+  // 12-bit ADC: 0 - 4095 corresponds to ~0 - 3.3V
+  float pinVoltage = (rawAdc / 4095.0f) * 3.3f;
+  // Resistor divider: R1 = 100k, R2 = 22k -> Ratio = (100+22)/22 = 5.545
+  batteryVoltage = pinVoltage * 5.545f;
 }
 
 // ----------------------------------------------------------------------------
-// Operating Mode Rules Engine
+// Determine Operating Mode
 // ----------------------------------------------------------------------------
 void evaluateOperatingStatus() {
-  // If sensors are disconnected or faulty, mode is Unknown/Not Configured
   if (statusTray1 != "ok" || statusTray2 != "ok" || statusPcm != "ok") {
-    currentOperatingMode = "Unknown/Not Configured";
+    currentOperatingMode = "Sensor Fault / Disconnected";
     return;
   }
 
-  float avgTray = (tempTray1 + tempTray2) / 2.0f;
+  float trayMean = (tempTray1 + tempTray2) / 2.0f;
 
-  // Rule 1: PCM Charging
-  // PCM is heating up towards or within its phase change range (45°C - 58°C)
-  // and solar drying air is actively heating (tray > 40°C)
-  if (avgTray >= 38.0f && tempPcm >= PCM_CHARGE_START && avgTray >= (tempPcm - 2.0f)) {
-    currentOperatingMode = "PCM Charging";
-  }
-  // Rule 2: Daytime Drying
-  // Trays are hot, active solar radiation drying product
-  else if (avgTray >= 35.0f && avgTray > tempPcm) {
-    currentOperatingMode = "Daytime Drying";
-  }
-  // Rule 3: Nighttime Heat Release
-  // Solar drying has ceased (trays dropping), but PCM is still hot and releasing stored latent heat (PCM > Tray)
-  else if (tempPcm >= 38.0f && tempPcm > (avgTray + 2.0f)) {
+  if (tempPcm > (trayMean + dischargeDelta)) {
     currentOperatingMode = "Nighttime Heat Release";
-  }
-  // Rule 4: Idle
-  // Near ambient or night without PCM heat
-  else {
+  } else if (tempPcm >= pcmChargeTrigger) {
+    currentOperatingMode = "PCM Charging";
+  } else if (trayMean >= 35.0f) {
+    currentOperatingMode = "Daytime Drying";
+  } else {
     currentOperatingMode = "Idle";
   }
 }
 
 // ----------------------------------------------------------------------------
-// Local Alerts and Dual Buzzer Logic (Hardware Resilience)
+// Autonomous Dual Buzzer Safety Evaluation
 // ----------------------------------------------------------------------------
 void evaluateAlertsAndBuzzers() {
   unsigned long now = millis();
-  bool triggerWarnBuzzer1 = false;
-  bool triggerCritBuzzer2 = false;
+  bool criticalAlert = false;
+  bool warningAlert  = false;
 
-  // 1. Critical Overheat checks
-  if ((statusPcm == "ok" && tempPcm >= PCM_CRIT_HIGH) ||
-      (statusTray1 == "ok" && tempTray1 >= TRAY1_CRIT_HIGH) ||
-      (statusTray2 == "ok" && tempTray2 >= TRAY2_CRIT_HIGH)) {
-    triggerCritBuzzer2 = true;
+  // 1. Critical evaluations
+  if (statusTray1 == "ok" && tempTray1 >= tray1Crit) criticalAlert = true;
+  if (statusTray2 == "ok" && tempTray2 >= tray2Crit) criticalAlert = true;
+  if (statusPcm == "ok"   && tempPcm   >= pcmCrit)   criticalAlert = true;
+
+  // 2. Warning evaluations
+  if (!criticalAlert) {
+    if (statusTray1 == "ok" && tempTray1 >= tray1Warn) warningAlert = true;
+    if (statusTray2 == "ok" && tempTray2 >= tray2Warn) warningAlert = true;
+    if (statusPcm == "ok"   && tempPcm   >= pcmWarn)   warningAlert = true;
   }
 
-  // 2. Warning checks or disconnected probe
-  if ((statusTray1 != "ok" || statusTray2 != "ok" || statusPcm != "ok") ||
-      (statusPcm == "ok" && tempPcm >= PCM_WARN_HIGH) ||
-      (statusTray1 == "ok" && tempTray1 >= TRAY1_WARN_HIGH) ||
-      (statusTray2 == "ok" && tempTray2 >= TRAY2_WARN_HIGH)) {
-    triggerWarnBuzzer1 = true;
-  }
-
-  // Cooldown check to avoid continuous irritating sounding
-  if ((triggerCritBuzzer2 || triggerWarnBuzzer1) && (now - lastBuzzerAlertTime >= BUZZER_COOLDOWN_MS)) {
-    lastBuzzerAlertTime = now;
-    if (triggerCritBuzzer2) {
-      Serial.println(F("[BUZZER] Triggering Critical Alert on Buzzer 2!"));
-      digitalWrite(PIN_BUZZER_2, HIGH);
-      buzzer2TurnOffTime = now + 1200; // 1.2s blast
-    } else if (triggerWarnBuzzer1) {
-      Serial.println(F("[BUZZER] Triggering Warning Alert on Buzzer 1."));
-      digitalWrite(PIN_BUZZER_1, HIGH);
-      buzzer1TurnOffTime = now + 400;  // 400ms beep
+  if (criticalAlert) {
+    if (now - lastBuzzerAlertTime >= BUZZER_COOLDOWN_MS || lastBuzzerAlertTime == 0) {
+      lastBuzzerAlertTime = now;
+      digitalWrite(PIN_BUZZER_2, HIGH); // Continuous critical alarm
+      buzzer2TurnOffTime = now + 3000;
+      Serial.println(F("[SAFETY] CRITICAL ALARM! Buzzer 2 triggered (GPIO 26)"));
+    }
+  } else if (warningAlert) {
+    if (now - lastBuzzerAlertTime >= BUZZER_COOLDOWN_MS || lastBuzzerAlertTime == 0) {
+      lastBuzzerAlertTime = now;
+      digitalWrite(PIN_BUZZER_1, HIGH); // Pulsed warning alarm
+      buzzer1TurnOffTime = now + 1200;
+      Serial.println(F("[SAFETY] WARNING ALARM! Buzzer 1 triggered (GPIO 25)"));
     }
   }
 }
 
 // ----------------------------------------------------------------------------
-// OLED Display Presentation
+// Fetch Remote Device Config (GET /api/device-config)
+// ----------------------------------------------------------------------------
+void fetchRemoteDeviceConfig() {
+  HTTPClient http;
+  http.begin(CONFIG_SERVER_URL);
+  http.addHeader("x-api-key", API_KEY);
+  http.setTimeout(4000);
+
+  int httpCode = http.GET();
+  if (httpCode == HTTP_CODE_OK) {
+    String payload = http.getString();
+    StaticJsonDocument<768> doc;
+    DeserializationError error = deserializeJson(doc, payload);
+
+    if (!error && doc["config"].is<JsonObject>()) {
+      JsonObject cfg = doc["config"];
+      if (cfg["tray1_warn_c"]) tray1Warn = cfg["tray1_warn_c"];
+      if (cfg["tray1_crit_c"]) tray1Crit = cfg["tray1_crit_c"];
+      if (cfg["tray2_warn_c"]) tray2Warn = cfg["tray2_warn_c"];
+      if (cfg["tray2_crit_c"]) tray2Crit = cfg["tray2_crit_c"];
+      if (cfg["pcm_warn_c"])   pcmWarn   = cfg["pcm_warn_c"];
+      if (cfg["pcm_crit_c"])   pcmCrit   = cfg["pcm_crit_c"];
+      if (cfg["pcm_plateau_c"]) pcmPlateau = cfg["pcm_plateau_c"];
+      if (cfg["pcm_charge_trigger_c"]) pcmChargeTrigger = cfg["pcm_charge_trigger_c"];
+      if (cfg["pcm_discharge_delta_c"]) dischargeDelta = cfg["pcm_discharge_delta_c"];
+
+      Serial.println(F("[CONFIG] Successfully updated dynamic thresholds from server."));
+    }
+  } else {
+    Serial.printf("[CONFIG] Fetch failed (Code: %d). Retaining fallback thresholds.\n", httpCode);
+  }
+  http.end();
+}
+
+// ----------------------------------------------------------------------------
+// OLED Display Refresh
 // ----------------------------------------------------------------------------
 void updateOledDisplay() {
   display.clearDisplay();
-  
-  // Header line
-  display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.print(F("SOLAR DRYER"));
@@ -399,7 +456,7 @@ void updateOledDisplay() {
 }
 
 // ----------------------------------------------------------------------------
-// Telemetry Ingestion HTTP POST
+// Telemetry Ingestion HTTP POST (Item 1, 4, 6, 13)
 // ----------------------------------------------------------------------------
 void sendTelemetryPayload() {
   HTTPClient http;
@@ -408,8 +465,8 @@ void sendTelemetryPayload() {
   http.addHeader("x-api-key", API_KEY);
   http.setTimeout(4000);
 
-  // Build JSON payload strictly matching standard schema
-  StaticJsonDocument<512> doc;
+  // Build JSON payload strictly matching telemetry ingest schema
+  StaticJsonDocument<768> doc;
   doc["deviceId"] = DEVICE_ID;
   doc["timestamp"] = getIso8601Timestamp();
 
@@ -423,6 +480,18 @@ void sendTelemetryPayload() {
   sensorsObj["tray2"] = statusTray2;
   sensorsObj["pcm"]   = statusPcm;
 
+  // Item 13: 64-bit ROM addresses
+  JsonObject roms = doc.createNestedObject("romAddresses");
+  roms["tray1"] = formatAddressToHex(addrTray1);
+  roms["tray2"] = formatAddressToHex(addrTray2);
+  roms["pcm"]   = formatAddressToHex(addrPcm);
+
+  // Item 1: Buzzer state reporting
+  JsonObject buzzers = doc.createNestedObject("buzzerState");
+  buzzers["buzzer1_ok"] = buzzer1Ok;
+  buzzers["buzzer2_ok"] = buzzer2Ok;
+  buzzers["heartbeat"]  = true;
+
   doc["batteryVoltage"] = serialized(String(batteryVoltage, 2));
   doc["operatingStatus"] = currentOperatingMode;
   doc["firmwareVersion"] = FIRMWARE_VERSION;
@@ -435,10 +504,10 @@ void sendTelemetryPayload() {
     if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_CREATED) {
       Serial.printf("[HTTP] Ingest successful (Status: %d)\n", httpCode);
     } else {
-      Serial.printf("[HTTP] Ingest returned warning status: %d\n", httpCode);
+      Serial.printf("[HTTP] Ingest returned status: %d\n", httpCode);
     }
   } else {
-    Serial.printf("[HTTP] Ingest POST failed, error: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("[HTTP] Ingest POST failed: %s\n", http.errorToString(httpCode).c_str());
   }
 
   http.end();
@@ -450,7 +519,6 @@ void sendTelemetryPayload() {
 String getIso8601Timestamp() {
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo, 50)) {
-    // If NTP not yet synced, return empty or fallback
     return "";
   }
   char buf[30];

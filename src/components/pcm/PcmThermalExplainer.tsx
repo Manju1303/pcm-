@@ -6,163 +6,228 @@ import {
   Settings2,
   Calculator,
   ShieldAlert,
+  Lock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 interface PcmThermalExplainerProps {
   currentPcmTemp: number | null;
   config: PcmCalibrationConfig;
   onUpdateConfig: (config: PcmCalibrationConfig) => void;
+  isAdmin?: boolean;
 }
 
 export function PcmThermalExplainer({
   currentPcmTemp,
   config,
   onUpdateConfig,
+  isAdmin = false,
 }: PcmThermalExplainerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<PcmCalibrationConfig>(config);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const totalLatentHeatKj = formData.massKg * formData.latentHeatKjKg;
-  const totalLatentHeatKwh = totalLatentHeatKj / 3600.0;
-  const estimatedHoursRuntime =
-    formData.chamberHeatLossRateW > 0
-      ? totalLatentHeatKj / (formData.chamberHeatLossRateW * 3.6)
-      : 0;
+  // Theoretical Maximum Latent Storage = mass x latent heat (Requirement 18)
+  const mass = formData.massKg || 2.5;
+  const latent = formData.latentHeatKjKg || 190.0;
+  const totalLatentHeatKj = mass * latent; // 2.5 x 190 = 475 kJ
+  const totalLatentHeatKwh = totalLatentHeatKj / 3600.0; // 475 / 3600 = 0.1319 kWh
+
+  // Check if heat loss and airflow parameters are entered
+  const hasHeatLoss = formData.chamberHeatLossRateW > 0;
+  const hasAirflow = formData.airflowRateM3h > 0;
+  const isRuntimeUnlocked = hasHeatLoss && hasAirflow;
+
+  const missingFields: string[] = [];
+  if (!hasHeatLoss) missingFields.push("Chamber Heat Loss Rate (Watts)");
+  if (!hasAirflow) missingFields.push("Airflow Rate (m³/h)");
+
+  // Estimated runtime when unlocked
+  const estimatedHoursRuntime = isRuntimeUnlocked
+    ? totalLatentHeatKj / (formData.chamberHeatLossRateW * 3.6)
+    : 0;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateConfig({
       ...formData,
-      isCalibrated: true,
+      isCalibrated: isRuntimeUnlocked,
     });
     setIsEditing(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   return (
     <div className="space-y-6">
-      {/* 1. Scientific Disclaimer & Engineering Rigor Alert */}
-      <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-5 shadow-xs">
+      {/* 1. Thermodynamic Notice: Temperature alone cannot measure State of Charge */}
+      <div className="rounded-xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/60 dark:bg-amber-950/40 p-5 shadow-xs">
         <div className="flex items-start space-x-3.5">
-          <div className="p-2.5 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
+          <div className="p-2.5 rounded-lg bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 shrink-0">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div className="space-y-2 text-xs">
-            <h4 className="text-sm font-bold text-amber-900">
+            <h4 className="text-sm font-bold text-amber-900 dark:text-amber-100">
               Thermodynamic Notice: Temperature vs. Latent Heat Storage
             </h4>
-            <p className="text-slate-700 leading-relaxed">
-              In phase change materials (PCMs) such as <strong>Paraffin Wax RT-50</strong>, heat absorption and release during phase change occurs isothermally (at a nearly constant temperature plateau of ~49°C - 51°C).
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              In phase change materials (PCMs) such as <strong>{config.materialType}</strong>, heat absorption and release during phase change occurs isothermally (at a nearly constant melting range of <strong>{config.meltingMinC}°C - {config.meltingMaxC}°C</strong>).
             </p>
-            <p className="text-slate-600 leading-relaxed">
-              <strong>Temperature alone cannot measure state of charge:</strong> A probe reading 50.0°C cannot distinguish whether the PCM is 10% molten or 95% molten. Precise energy storage and nocturnal drying runtime estimates require calibrated physical properties:
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
+              Notice: Temperature alone cannot measure state of charge. A probe reading 50.0°C cannot distinguish whether the PCM is 10% molten or 95% molten without calorimetric energy balance.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px] text-amber-900 font-medium">
-              <span className="p-1.5 rounded bg-white border border-amber-200 shadow-2xs">• PCM Net Mass (m, kg)</span>
-              <span className="p-1.5 rounded bg-white border border-amber-200 shadow-2xs">• Latent Heat (&Delta;H_fus, kJ/kg)</span>
-              <span className="p-1.5 rounded bg-white border border-amber-200 shadow-2xs">• Phase Temp (T_m, °C)</span>
-              <span className="p-1.5 rounded bg-white border border-amber-200 shadow-2xs">• Heat Loss Rate (U&times;A, W/K)</span>
-              <span className="p-1.5 rounded bg-white border border-amber-200 shadow-2xs">• Airflow Rate (Q_v, m³/h)</span>
-              <span className="p-1.5 rounded bg-white border border-amber-200 shadow-2xs">• Crop Moisture Load</span>
+            <div className="p-2 rounded bg-amber-100/70 dark:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 font-mono">
+              Night Duration: <strong>5 Hours is a project TARGET, not a verified experimental result</strong> until measured data is recorded.
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Calibration & Thermal Model Dashboard */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+      {saveSuccess && (
+        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>PCM parameters updated successfully.</span>
+        </div>
+      )}
+
+      {/* 2. Calibration & Theoretical Latent Storage Model */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div className="flex items-center space-x-2.5">
-            <Calculator className="w-5 h-5 text-emerald-600" />
+            <Calculator className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <h3 className="font-semibold text-sm text-slate-900">
-                PCM Physical Parameters & Calibrated Storage Model
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                PCM Physical Parameters & Theoretical Latent Capacity
               </h3>
-              <p className="text-[11px] text-slate-500">
-                {config.isCalibrated
-                  ? "Calibration active — displaying engineered capacity estimates."
-                  : "Uncalibrated baseline — estimate mode locked until parameter validation."}
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Latent capacity computed from mass and enthalpy of fusion (verify against manufacturer datasheet)
               </p>
             </div>
           </div>
 
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium border border-slate-200 dark:border-slate-700 transition-colors touch-target"
           >
-            <Settings2 className="w-3.5 h-3.5 text-emerald-600" />
+            <Settings2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>{isEditing ? "Close Editor" : "Edit Parameters"}</span>
           </button>
         </div>
 
-        {/* Edit Form */}
+        {/* Parameters Editor */}
         {isEditing ? (
           <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="block text-slate-600 mb-1">PCM Material Name</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                PCM Material Name <span className="text-[10px] text-amber-600 font-mono">(verify against datasheet)</span>
+              </label>
               <input
                 type="text"
                 value={formData.materialType}
                 onChange={(e) => setFormData({ ...formData, materialType: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
                 required
               />
             </div>
+
             <div>
-              <label className="block text-slate-600 mb-1">PCM Mass (kg)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                PCM Net Mass (kg)
+              </label>
               <input
                 type="number"
                 step="0.1"
                 min="0.1"
                 value={formData.massKg}
                 onChange={(e) => setFormData({ ...formData, massKg: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
                 required
               />
             </div>
+
             <div>
-              <label className="block text-slate-600 mb-1">Latent Heat of Fusion (kJ/kg)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                Latent Heat of Fusion (kJ/kg) <span className="text-[10px] text-amber-600 font-mono">(verify datasheet)</span>
+              </label>
               <input
                 type="number"
                 step="1"
-                min="50"
+                min="10"
                 value={formData.latentHeatKjKg}
                 onChange={(e) => setFormData({ ...formData, latentHeatKjKg: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
                 required
               />
             </div>
+
             <div>
-              <label className="block text-slate-600 mb-1">Phase Change Plateau (°C)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                Melting Range Min (°C)
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                value={formData.meltingMinC}
+                onChange={(e) => setFormData({ ...formData, meltingMinC: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                Melting Range Max (°C)
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                value={formData.meltingMaxC}
+                onChange={(e) => setFormData({ ...formData, meltingMaxC: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                Nominal Phase Plateau (°C)
+              </label>
               <input
                 type="number"
                 step="0.5"
                 value={formData.phaseChangeTempC}
                 onChange={(e) => setFormData({ ...formData, phaseChangeTempC: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
                 required
               />
             </div>
+
             <div>
-              <label className="block text-slate-600 mb-1">Charging Trigger Threshold (°C)</label>
-              <input
-                type="number"
-                step="0.5"
-                value={formData.chargeStartTempC}
-                onChange={(e) => setFormData({ ...formData, chargeStartTempC: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 font-mono"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-slate-600 mb-1">Chamber Heat Loss Rate (Watts)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                Chamber Heat Loss Rate (Watts) <span className="text-slate-400">(0 = unentered)</span>
+              </label>
               <input
                 type="number"
                 step="1"
-                min="5"
+                min="0"
                 value={formData.chamberHeatLossRateW}
                 onChange={(e) => setFormData({ ...formData, chamberHeatLossRateW: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 font-mono"
-                required
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
+                Airflow Rate (m³/h) <span className="text-slate-400">(0 = unentered)</span>
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={formData.airflowRateM3h}
+                onChange={(e) => setFormData({ ...formData, airflowRateM3h: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono"
               />
             </div>
 
@@ -170,7 +235,7 @@ export function PcmThermalExplainer({
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs"
+                className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs"
               >
                 Cancel
               </button>
@@ -178,60 +243,65 @@ export function PcmThermalExplainer({
                 type="submit"
                 className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs shadow-xs"
               >
-                Save & Enable Calibration
+                Save PCM Parameters
               </button>
             </div>
           </form>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[11px] text-slate-500 uppercase font-mono">Installed Material</span>
-              <div className="text-base font-bold text-slate-900 mt-1">{config.materialType}</div>
-              <div className="text-xs text-slate-600 mt-0.5 font-mono">Mass: {config.massKg} kg</div>
+            {/* Material */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono">Installed Material</span>
+              <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{config.materialType}</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-mono">Mass: {config.massKg} kg</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[11px] text-slate-500 uppercase font-mono">Phase Plateau</span>
-              <div className="text-base font-bold text-emerald-700 mt-1 font-mono">
-                {config.phaseChangeTempC.toFixed(1)} °C
+            {/* Melting Range & Plateau */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono">Melting Range</span>
+              <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+                {config.meltingMinC}°C – {config.meltingMaxC}°C
               </div>
-              <div className="text-xs text-slate-600 mt-0.5 font-mono">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-mono">
                 Latent: {config.latentHeatKjKg} kJ/kg
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[11px] text-slate-500 uppercase font-mono">Max Latent Storage</span>
-              {config.isCalibrated ? (
-                <>
-                  <div className="text-base font-bold text-amber-700 mt-1 font-mono">
-                    {totalLatentHeatKj.toFixed(0)} kJ
-                  </div>
-                  <div className="text-xs text-slate-600 mt-0.5 font-mono">
-                    ≈ {totalLatentHeatKwh.toFixed(3)} kWh thermal
-                  </div>
-                </>
-              ) : (
-                <div className="text-xs text-amber-700 mt-2 font-mono">
-                  Requires Calibration
-                </div>
-              )}
+            {/* Theoretical Maximum Latent Storage (Requirement 18: mass x latent heat) */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono">Max Latent Storage</span>
+              <div className="text-sm font-bold text-amber-700 dark:text-amber-400 font-mono">
+                {totalLatentHeatKj.toFixed(0)} kJ
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                = {totalLatentHeatKwh.toFixed(2)} kWh thermal
+              </div>
+              <div className="text-[10px] text-slate-400 italic">
+                ({config.massKg} kg &times; {config.latentHeatKjKg} kJ/kg)
+              </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[11px] text-slate-500 uppercase font-mono">Estimated Runtime</span>
-              {config.isCalibrated ? (
+            {/* Estimated Runtime - Locked until parameters are entered */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono">Estimated Runtime</span>
+              {isRuntimeUnlocked ? (
                 <>
-                  <div className="text-base font-bold text-indigo-700 mt-1 font-mono">
+                  <div className="text-sm font-bold text-indigo-700 dark:text-indigo-400 font-mono">
                     ~{estimatedHoursRuntime.toFixed(1)} Hours
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">
-                    Under {config.chamberHeatLossRateW}W loss
+                  <div className="text-[10px] text-slate-500">
+                    Under {config.chamberHeatLossRateW}W loss & {config.airflowRateM3h} m³/h airflow
                   </div>
                 </>
               ) : (
-                <div className="text-xs text-slate-500 mt-2 font-mono">
-                  Locked (Uncalibrated)
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center space-x-1 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                    <Lock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Locked (Uncalibrated)</span>
+                  </div>
+                  <div className="text-[10px] text-amber-700 dark:text-amber-400">
+                    Missing parameters: {missingFields.join(", ")}
+                  </div>
                 </div>
               )}
             </div>

@@ -1,15 +1,18 @@
 import { OperatingMode, SensorStatusSet, TemperatureSet, PcmCalibrationConfig } from "@/types/telemetry";
 
 export const DEFAULT_PCM_CONFIG: PcmCalibrationConfig = {
-  materialType: "Paraffin Wax RT-50",
+  materialType: "Paraffin RT-50",
   massKg: 2.5,
   latentHeatKjKg: 190.0,
   phaseChangeTempC: 50.0,
   chargeStartTempC: 45.0,
   dischargeThresholdDeltaC: 2.0,
-  chamberHeatLossRateW: 35.0,
+  meltingMinC: 45.0,
+  meltingMaxC: 51.0,
+  chamberHeatLossRateW: 0.0,
+  airflowRateM3h: 0.0,
   isCalibrated: false,
-  notes: "Provisional constants based on commercial RT-50 technical data sheet.",
+  notes: "Provisional parameters — verify against chemical supplier datasheet.",
 };
 
 /**
@@ -21,7 +24,6 @@ export function determineOperatingMode(
   sensors: SensorStatusSet,
   config: PcmCalibrationConfig = DEFAULT_PCM_CONFIG
 ): OperatingMode {
-  // If any primary sensor is disconnected, faulty or missing, mode cannot be determined reliably
   if (
     sensors.tray1 !== "ok" ||
     sensors.tray2 !== "ok" ||
@@ -55,6 +57,5 @@ export function determineOperatingMode(
   }
 
   // Rule 4: Idle
-  // Ambient temperature, low solar energy, PCM uncharged
   return "Idle";
 }

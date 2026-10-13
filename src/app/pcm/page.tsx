@@ -13,10 +13,11 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
-import { Flame, Radio } from "lucide-react";
+import { Flame, Radio, Moon, Clock, CheckCircle2 } from "lucide-react";
+import { formatTime, formatDate, formatTemp } from "@/lib/utils";
 
 export default function PcmThermalStoragePage() {
-  const { currentReading, history, pcmConfig, updatePcmConfig } = useTelemetry();
+  const { currentReading, history, pcmConfig, updatePcmConfig, nightTests, isAdmin } = useTelemetry();
 
   const pcmChartData = useMemo(() => {
     return history.map((r) => {
@@ -24,9 +25,9 @@ export default function PcmThermalStoragePage() {
       return {
         timestamp: r.timestamp,
         timeLabel: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        pcm: r.temperatures.pcm,
-        tray1: r.temperatures.tray1,
-        tray2: r.temperatures.tray2,
+        pcm: r.sensors.pcm === "ok" ? r.temperatures.pcm : null,
+        tray1: r.sensors.tray1 === "ok" ? r.temperatures.tray1 : null,
+        tray2: r.sensors.tray2 === "ok" ? r.temperatures.tray2 : null,
         mode: r.operatingStatus,
       };
     });
@@ -35,50 +36,70 @@ export default function PcmThermalStoragePage() {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs p-5">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
         <div className="flex items-center space-x-2">
-          <Flame className="w-5 h-5 text-emerald-600" />
-          <h2 className="text-base font-bold text-slate-900">
+          <Flame className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
             PCM Thermal Energy Storage & Latent Heat Monitoring
           </h2>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
           Detailed thermodynamics of the Phase Change Material (PCM) bed. Tracks isothermal charging plateaus and nocturnal heat release.
         </p>
       </div>
 
+      {/* Target vs Measured Banner */}
+      <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 flex items-center justify-between text-xs">
+        <div className="flex items-center space-x-2.5">
+          <Moon className="w-4 h-4 text-amber-600 shrink-0" />
+          <span className="text-amber-900 dark:text-amber-200">
+            Night Heat Release Duration: <strong>5-Hour Target (Project target — not yet validated with field data)</strong>
+          </span>
+        </div>
+        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+          Measured value displayed only after verified test run
+        </span>
+      </div>
+
       {/* PCM Temperature Graph with Phase Plateau Reference */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs p-5">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-sm text-slate-900">
-              PCM Core Temperature Profile vs Phase Transition Thresholds
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+              PCM Core Temperature Profile vs Phase Transition Plateau
             </h3>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Amber line indicates nominal melting plateau ({pcmConfig.phaseChangeTempC}°C)
             </p>
           </div>
-          <span className="font-mono text-xs text-emerald-700 font-semibold px-2.5 py-1 rounded bg-emerald-50 border border-emerald-200">
-            Current: {currentReading?.temperatures.pcm ? `${currentReading.temperatures.pcm.toFixed(1)}°C` : "--.-°C"}
+          <span className="font-mono text-xs text-emerald-700 dark:text-emerald-300 font-semibold px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
+            Current: {currentReading?.sensors.pcm === "ok" && currentReading?.temperatures.pcm !== null ? `${currentReading.temperatures.pcm.toFixed(1)}°C` : "--"}
           </span>
         </div>
 
         {pcmChartData.length === 0 ? (
-          <div className="h-64 sm:h-72 w-full flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-lg bg-slate-50 text-center p-6">
+          <div className="h-64 sm:h-72 w-full flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-center p-6">
             <Radio className="w-8 h-8 text-slate-400 animate-pulse mb-2" />
-            <h4 className="text-sm font-semibold text-slate-700">Awaiting PCM Probe Readings</h4>
-            <p className="text-xs text-slate-500 max-w-sm mt-1">
-              Connect your DS18B20 PCM core probe. Real-time temperature curves will plot here automatically.
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Awaiting PCM Probe Readings</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1">
+              Connect your DS18B20 PCM thermal core probe. Real-time temperature curves will plot here automatically.
             </p>
           </div>
         ) : (
           <div className="h-64 sm:h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={pcmChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="timeLabel" stroke="#94a3b8" fontSize={11} tickLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={11} domain={[20, 75]} tickLine={false} tickFormatter={(v) => `${v}°`} />
-                <Tooltip contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderRadius: "0.5rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#ffffff",
+                    borderColor: "#e2e8f0",
+                    borderRadius: "0.5rem",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                />
                 <ReferenceLine
                   y={pcmConfig.phaseChangeTempC}
                   stroke="#d97706"
@@ -104,19 +125,21 @@ export default function PcmThermalStoragePage() {
                 <Line
                   type="monotone"
                   dataKey="pcm"
-                  name="PCM Temperature"
+                  name="PCM Thermal Core"
                   stroke="#059669"
                   strokeWidth={3}
                   dot={false}
+                  connectNulls={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="tray1"
-                  name="Tray 1 (Top Deck)"
+                  name="Tray 1 - Upper Deck"
                   stroke="#0284c7"
                   strokeWidth={1.5}
                   strokeDasharray="2 2"
                   dot={false}
+                  connectNulls={false}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -124,12 +147,72 @@ export default function PcmThermalStoragePage() {
         )}
       </div>
 
-      {/* Scientific Explainer and Calibration Tool */}
+      {/* Scientific Explainer & Theoretical Capacity */}
       <PcmThermalExplainer
         currentPcmTemp={currentReading?.temperatures.pcm ?? null}
         config={pcmConfig}
         onUpdateConfig={updatePcmConfig}
+        isAdmin={isAdmin}
       />
+
+      {/* Night Test Results Section (Requirement 2) */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
+        <div className="flex items-center space-x-2">
+          <Moon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <div>
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+              Night Test Results (Thermal Discharge Validation)
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Computed strictly from stored telemetry frames. Measures duration PCM maintained temperature above tray mean.
+            </p>
+          </div>
+        </div>
+
+        {nightTests.length === 0 ? (
+          <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center space-y-2 bg-slate-50/50 dark:bg-slate-800/30">
+            <Clock className="w-8 h-8 text-slate-400 mx-auto" />
+            <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              No Night Discharge Tests Recorded Yet
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              This section remains empty until an overnight test run has been performed with real hardware telemetry logged.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {nightTests.map((test) => (
+              <div
+                key={test.id}
+                className="p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+              >
+                <div>
+                  <div className="flex items-center space-x-2 font-mono">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                      {formatDate(test.startTime)} – {formatTime(test.endTime)}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold">
+                      VERIFIED RUN
+                    </span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 text-[11px] mt-1">
+                    {test.notes || "Standard nocturnal cooling run."}
+                  </p>
+                </div>
+
+                <div className="text-right font-mono">
+                  <div className="text-base font-bold text-indigo-600 dark:text-indigo-400">
+                    {test.durationHours} Hours ({test.durationMinutes} min)
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    PCM Mean Margin: +{test.pcmAvgAboveTrayDeltaC.toFixed(1)}°C
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

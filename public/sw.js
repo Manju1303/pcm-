@@ -3,10 +3,11 @@
  * Provides offline application shell, safe caching, and network resilience.
  */
 
-const CACHE_NAME = "solar-dryer-cache-v1";
+const CACHE_NAME = "solar-dryer-cache-v2";
 const APP_SHELL_URLS = [
   "/",
-  "/manifest.json",
+  "/manifest.webmanifest",
+  "/offline",
   "/live",
   "/analytics",
   "/pcm",
@@ -17,6 +18,7 @@ const APP_SHELL_URLS = [
   "/admin",
   "/icons/icon-192x192.svg",
   "/icons/icon-512x512.svg",
+  "/icons/icon-maskable.svg",
 ];
 
 // Install Event - Pre-cache App Shell
@@ -28,7 +30,13 @@ self.addEventListener("install", (event) => {
       });
     })
   );
-  self.skipWaiting();
+});
+
+// Message Event - Skip waiting when requested by user
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 // Activate Event - Clean up stale caches
@@ -47,17 +55,45 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch Event - Network first with cache fallback for navigation, cache-first for static assets
+// Fetch Event
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Never cache API ingestion POST requests or sensitive auth calls
-  if (request.method !== "GET" || url.pathname.startsWith("/api/telemetry")) {
+  // NEVER cache write requests (POST, PUT, DELETE) or authentication endpoints
+  if (
+    request.method !== "GET" ||
+    url.pathname.startsWith("/api/auth") ||
+    url.pathname === "/api/settings" ||
+    url.pathname.startsWith("/api/alerts/acknowledge") ||
+    url.pathname.startsWith("/api/buzzer/test")
+  ) {
     return;
   }
 
-  // Navigation (HTML pages): Network first, falling back to cache
+  // API GET telemetry queries: Network-first with cached fallback
+  if (url.pathname.startsWith("/api/telemetry") || url.pathname.startsWith("/api/project-status")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          return new Response(JSON.stringify({ source: "OFFLINE_CACHE", count: 0, data: [] }), {
+            headers: { "Content-Type": "application/json" },
+          });
+        })
+    );
+    return;
+  }
+
+  // HTML page navigation: Network-first, fallback to /offline
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -71,8 +107,8 @@ self.addEventListener("fetch", (event) => {
         .catch(async () => {
           const cached = await caches.match(request);
           if (cached) return cached;
-          const fallback = await caches.match("/");
-          return fallback || new Response("Offline: App shell unavailable.", { status: 503 });
+          const offlinePage = await caches.match("/offline");
+          return offlinePage || (await caches.match("/")) || new Response("Offline", { status: 503 });
         })
     );
     return;

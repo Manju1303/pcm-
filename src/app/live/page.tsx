@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useTelemetry } from "@/context/TelemetryContext";
-import { formatTime, formatTemp } from "@/lib/utils";
+import { formatTime, formatTemp, formatTempUnit } from "@/lib/utils";
 import {
   Activity,
   Wind,
@@ -10,46 +11,86 @@ import {
   Layers,
   Thermometer,
   Volume2,
+  Lock,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function LiveMonitoringPage() {
-  const { currentReading, isOnline } = useTelemetry();
+  const { currentReading, isOnline, isStale, isOffline, isAdmin, thresholds } = useTelemetry();
   const [buzzerTestTriggered, setBuzzerTestTriggered] = useState(false);
+  const [buzzerError, setBuzzerError] = useState<string | null>(null);
 
-  const t1 = currentReading?.temperatures.tray1 ?? null;
-  const t2 = currentReading?.temperatures.tray2 ?? null;
-  const pcm = currentReading?.temperatures.pcm ?? null;
+  const t1 = currentReading?.sensors.tray1 === "ok" ? currentReading.temperatures.tray1 : null;
+  const t2 = currentReading?.sensors.tray2 === "ok" ? currentReading.temperatures.tray2 : null;
+  const pcm = currentReading?.sensors.pcm === "ok" ? currentReading.temperatures.pcm : null;
+
+  const warnTray = thresholds?.tray1Warn ?? 58.0;
+  const critTray = thresholds?.tray1Crit ?? 68.0;
+  const warnPcm = thresholds?.pcmWarn ?? 60.0;
+  const critPcm = thresholds?.pcmCrit ?? 72.0;
 
   const GaugeMeter = ({
     title,
+    subtitle,
     value,
     unit = "°C",
     min = 20,
     max = 80,
     accentColor = "#059669",
-    subtitle,
+    warn = 58,
+    crit = 68,
+    isStaleOrOffline = false,
   }: {
     title: string;
+    subtitle: string;
     value: number | null;
     unit?: string;
     min?: number;
     max?: number;
     accentColor?: string;
-    subtitle: string;
+    warn?: number;
+    crit?: number;
+    isStaleOrOffline?: boolean;
   }) => {
     const val = value ?? min;
     const percentage = Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100));
     const strokeDashoffset = 251.2 - (251.2 * percentage * 0.75) / 100;
 
+    const isCrit = !isStaleOrOffline && value !== null && value >= crit;
+    const isWarn = !isStaleOrOffline && value !== null && value >= warn && !isCrit;
+
+    const dynamicColor = isStaleOrOffline
+      ? "#94a3b8"
+      : isCrit
+      ? "#ef4444"
+      : isWarn
+      ? "#f59e0b"
+      : accentColor;
+
     return (
-      <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs flex flex-col items-center text-center relative overflow-hidden">
-        <h4 className="text-xs font-semibold text-slate-800 uppercase tracking-wider">{title}</h4>
-        <p className="text-[11px] text-slate-500 mb-3">{subtitle}</p>
+      <div
+        className={`p-5 rounded-xl border bg-white dark:bg-slate-900 shadow-xs flex flex-col items-center text-center relative overflow-hidden transition-all ${
+          isCrit
+            ? "border-rose-400 dark:border-rose-700 bg-rose-50/30 border-critical-pulse"
+            : isWarn
+            ? "border-amber-300 dark:border-amber-700"
+            : "border-slate-200 dark:border-slate-800"
+        } ${isStaleOrOffline ? "opacity-75" : ""}`}
+      >
+        <div className="flex items-center space-x-1.5 mb-0.5">
+          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">{title}</h4>
+          {isStaleOrOffline && (
+            <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[9px] font-mono font-bold text-slate-600 dark:text-slate-400 uppercase">
+              Stale
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">{subtitle}</p>
 
         {/* SVG Circular Gauge */}
         <div className="relative w-40 h-40 flex items-center justify-center">
           <svg className="w-full h-full transform -rotate-135" viewBox="0 0 100 100">
-            {/* Background Arc */}
             <circle
               cx="50"
               cy="50"
@@ -60,14 +101,14 @@ export default function LiveMonitoringPage() {
               strokeDasharray="251.2"
               strokeDashoffset="62.8"
               strokeLinecap="round"
+              className="dark:stroke-slate-800"
             />
-            {/* Foreground Animated Gauge */}
             <circle
               cx="50"
               cy="50"
               r="40"
               fill="transparent"
-              stroke={accentColor}
+              stroke={dynamicColor}
               strokeWidth="8"
               strokeDasharray="251.2"
               strokeDashoffset={strokeDashoffset}
@@ -76,131 +117,169 @@ export default function LiveMonitoringPage() {
             />
           </svg>
 
-          {/* Centered Number */}
+          {/* Centered Tabular Number */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-mono font-bold text-slate-900">
-              {value !== null ? value.toFixed(1) : "--.-"}
+            <span className="text-3xl tabular-nums font-mono font-bold text-slate-900 dark:text-slate-100">
+              {value !== null && !isStaleOrOffline ? value.toFixed(1) : value !== null ? value.toFixed(1) : "--"}
             </span>
-            <span className="text-xs text-slate-500 font-mono mt-0.5">{unit}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{unit}</span>
           </div>
         </div>
 
-        <div className="flex justify-between w-full text-[10px] text-slate-400 font-mono mt-1 px-4">
+        <div className="flex justify-between w-full text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-1 px-4">
           <span>{min}{unit}</span>
+          <span>Warn: {warn}°</span>
           <span>{max}{unit}</span>
         </div>
       </div>
     );
   };
 
-  const handleTestBuzzer = () => {
-    setBuzzerTestTriggered(true);
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.3);
-    } catch (e) {
-      console.warn("Audio Context beep", e);
+  const handleTestBuzzer = async () => {
+    if (!isAdmin) {
+      setBuzzerError("Administrator session required to trigger buzzer test.");
+      setTimeout(() => setBuzzerError(null), 3000);
+      return;
     }
-    setTimeout(() => setBuzzerTestTriggered(false), 2000);
+
+    try {
+      const res = await fetch("/api/buzzer/test", { method: "POST" });
+      if (res.ok) {
+        setBuzzerTestTriggered(true);
+        // Play local simulated tone
+        try {
+          const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        } catch {
+          // ignore
+        }
+        setTimeout(() => setBuzzerTestTriggered(false), 2000);
+      } else {
+        setBuzzerError("Failed to trigger buzzer test on server.");
+        setTimeout(() => setBuzzerError(null), 3000);
+      }
+    } catch {
+      setBuzzerError("Network error triggering buzzer test.");
+      setTimeout(() => setBuzzerError(null), 3000);
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Activity className="w-5 h-5 text-emerald-600 animate-pulse" />
-            <h2 className="text-base font-bold text-slate-900">Live Chamber Gauge Monitor</h2>
+            <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Live Chamber Gauge Monitor</h2>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time telemetry stream refreshing live from the ESP32. Observing temperature across both drying decks and the PCM bed.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Real-time telemetry stream from ESP32. Standardised deck probes and PCM core dial monitoring.
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+          {buzzerError && (
+            <span className="text-xs text-rose-600 font-medium">{buzzerError}</span>
+          )}
+
           <button
             onClick={handleTestBuzzer}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center space-x-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center space-x-1.5 transition-all touch-target ${
               buzzerTestTriggered
                 ? "bg-rose-50 border-rose-300 text-rose-700"
-                : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
+                : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
             }`}
           >
-            <Volume2 className="w-4 h-4 text-amber-600" />
-            <span>{buzzerTestTriggered ? "Buzzer Sounding!" : "Test Alert Buzzer"}</span>
+            {isAdmin ? <Volume2 className="w-4 h-4 text-amber-600" /> : <Lock className="w-4 h-4 text-slate-400" />}
+            <span>{buzzerTestTriggered ? "Buzzer Sounding!" : isAdmin ? "Test Alert Buzzer" : "Test Buzzer (Admin Only)"}</span>
           </button>
         </div>
       </div>
 
-      {/* 3 Circular Dial Gauges */}
+      {/* 3 Circular Dial Gauges with Standardised Titles */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <GaugeMeter
-          title="Tray 1 (Top Deck)"
-          subtitle="Direct Solar Collector Inlet"
+          title="Tray 1 - Upper Deck"
+          subtitle="Collector Hot Air Inlet"
           value={t1}
           accentColor="#0284c7"
           min={20}
           max={75}
+          warn={warnTray}
+          crit={critTray}
+          isStaleOrOffline={isStale || isOffline}
         />
         <GaugeMeter
-          title="Tray 2 (Bottom Deck)"
-          subtitle="Intermediate Exhaust Flow Deck"
+          title="Tray 2 - Lower Deck"
+          subtitle="Intermediate Exhaust Flow Zone"
           value={t2}
           accentColor="#6366f1"
           min={20}
           max={75}
+          warn={warnTray}
+          crit={critTray}
+          isStaleOrOffline={isStale || isOffline}
         />
         <GaugeMeter
-          title="PCM Thermal Reservoir"
-          subtitle="Paraffin Wax RT-50 Latent Bed"
+          title="PCM Thermal Core"
+          subtitle="Paraffin RT-50 Storage Bed"
           value={pcm}
           accentColor="#059669"
           min={20}
           max={75}
+          warn={warnPcm}
+          crit={critPcm}
+          isStaleOrOffline={isStale || isOffline}
         />
       </div>
 
       {/* Chamber Cross-Section Diagram */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs p-5">
-        <h3 className="font-semibold text-sm text-slate-900 mb-1">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
+        <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-1">
           Chamber Thermodynamics & Airflow Diagram
         </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Visualizing convective air currents and conductive thermal flux inside the enclosure
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Convective solar airflow path and conductive thermal core interaction
         </p>
 
-        <div className="relative border border-slate-200 rounded-xl bg-slate-50 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="p-4 rounded-lg bg-white border border-amber-200 shadow-2xs text-center w-full md:w-1/4">
+        <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/50 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 shadow-2xs text-center w-full md:w-1/4">
             <Wind className="w-6 h-6 text-amber-500 mx-auto animate-bounce" />
-            <h4 className="text-xs font-bold text-amber-900 mt-2">Solar Air Intake</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Collector heats incoming air</p>
+            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 mt-2">Solar Air Intake</h4>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Preheated collector stream</p>
           </div>
 
-          <div className="p-4 rounded-lg bg-white border border-sky-200 shadow-2xs text-center w-full md:w-1/4">
+          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-800 shadow-2xs text-center w-full md:w-1/4">
             <Layers className="w-6 h-6 text-sky-600 mx-auto" />
-            <h4 className="text-xs font-bold text-sky-900 mt-2">Tray 1: {formatTemp(t1)}°C</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Top produce layer</p>
+            <h4 className="text-xs font-bold text-sky-900 dark:text-sky-200 mt-2">Tray 1 - Upper Deck</h4>
+            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+              {formatTempUnit(t1)}
+            </span>
           </div>
 
-          <div className="p-4 rounded-lg bg-white border border-indigo-200 shadow-2xs text-center w-full md:w-1/4">
+          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 shadow-2xs text-center w-full md:w-1/4">
             <Layers className="w-6 h-6 text-indigo-600 mx-auto" />
-            <h4 className="text-xs font-bold text-indigo-900 mt-2">Tray 2: {formatTemp(t2)}°C</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Bottom produce layer</p>
+            <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 mt-2">Tray 2 - Lower Deck</h4>
+            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+              {formatTempUnit(t2)}
+            </span>
           </div>
 
-          <div className="p-4 rounded-lg bg-white border border-emerald-200 shadow-2xs text-center w-full md:w-1/4">
+          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 shadow-2xs text-center w-full md:w-1/4">
             <Flame className="w-6 h-6 text-emerald-600 mx-auto" />
-            <h4 className="text-xs font-bold text-emerald-900 mt-2">PCM Bed: {formatTemp(pcm)}°C</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Thermal storage core</p>
+            <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200 mt-2">PCM Thermal Core</h4>
+            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+              {formatTempUnit(pcm)}
+            </span>
           </div>
         </div>
       </div>

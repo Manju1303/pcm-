@@ -1,284 +1,458 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { useTelemetry } from "@/context/TelemetryContext";
-import { AlertRule } from "@/types/telemetry";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatExactDateTime, formatRelativeTime } from "@/lib/utils";
 import {
   BellRing,
   AlertTriangle,
   Bell,
   ShieldCheck,
+  ShieldAlert,
+  Volume2,
+  CheckCircle2,
+  Lock,
+  Filter,
+  Info,
+  Clock,
+  WifiOff,
 } from "lucide-react";
 import { requestBrowserNotificationPermission } from "@/lib/alerts-engine";
+import { AlertEvent } from "@/types/telemetry";
 
-export default function AlertsConfigPage() {
+type AlertFilter = "all" | "warning" | "critical" | "fault" | "offline" | "acknowledged";
+
+export default function AlertsSafetyPage() {
   const {
-    alertRules,
     activeAlerts,
     alertHistory,
-    updateAlertRules,
+    faultHistory,
     acknowledgeAlert,
     clearAllActiveAlerts,
+    deviceMetadata,
+    isAdmin,
   } = useTelemetry();
 
+  const [filter, setFilter] = useState<AlertFilter>("all");
   const [notificationStatus, setNotificationStatus] = useState<string>("default");
-  const [rulesState, setRulesState] = useState<AlertRule[]>(alertRules);
+  const [ackLoadingId, setAckLoadingId] = useState<string | null>(null);
 
   const handleRequestPermission = async () => {
     const granted = await requestBrowserNotificationPermission();
     setNotificationStatus(granted ? "granted" : "denied");
   };
 
-  const handleToggleRule = (id: string) => {
-    const updated = rulesState.map((r) =>
-      r.id === id ? { ...r, enabled: !r.enabled } : r
-    );
-    setRulesState(updated);
-    updateAlertRules(updated);
+  const handleAcknowledge = async (alertId: string) => {
+    if (!isAdmin) return;
+    setAckLoadingId(alertId);
+    try {
+      await acknowledgeAlert(alertId);
+    } finally {
+      setAckLoadingId(null);
+    }
   };
 
-  const handleThresholdChange = (id: string, newThreshold: number) => {
-    const updated = rulesState.map((r) =>
-      r.id === id ? { ...r, threshold: newThreshold } : r
+  // Combine and deduplicate history & active alerts for complete event log
+  const allEvents = useMemo(() => {
+    const map = new Map<string, AlertEvent>();
+    activeAlerts.forEach((a) => map.set(a.id, a));
+    alertHistory.forEach((a) => {
+      if (!map.has(a.id)) map.set(a.id, a);
+    });
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-    setRulesState(updated);
-    updateAlertRules(updated);
-  };
+  }, [activeAlerts, alertHistory]);
 
-  const handleHysteresisChange = (id: string, newHysteresis: number) => {
-    const updated = rulesState.map((r) =>
-      r.id === id ? { ...r, hysteresis: newHysteresis } : r
-    );
-    setRulesState(updated);
-    updateAlertRules(updated);
-  };
+  const filteredEvents = useMemo(() => {
+    return allEvents.filter((item) => {
+      if (filter === "all") return true;
+      if (filter === "warning") return item.severity === "warning";
+      if (filter === "critical") return item.severity === "critical";
+      if (filter === "offline") return item.severity === "offline" || item.id.includes("offline");
+      if (filter === "fault") return item.severity === "fault" || item.id.includes("fault");
+      if (filter === "acknowledged") return item.status === "acknowledged";
+      return true;
+    });
+  }, [allEvents, filter]);
 
-  const handleCooldownChange = (id: string, newCooldownSec: number) => {
-    const updated = rulesState.map((r) =>
-      r.id === id ? { ...r, cooldownMs: newCooldownSec * 1000 } : r
-    );
-    setRulesState(updated);
-    updateAlertRules(updated);
-  };
+  const bzState = deviceMetadata.buzzerState;
+  const buzzerKnown = bzState?.buzzer1_ok !== null && bzState?.buzzer1_ok !== undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Title & Notification Permission */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <BellRing className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-base font-bold text-slate-900">
-              Alerts, Thresholds & Dual-Buzzer Configuration
-            </h2>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Independent limits for Tray 1, Tray 2, PCM, and solar battery. Hysteresis and cooldown timers prevent alert chatter.
-          </p>
-        </div>
+    <>
+      <title>Alerts & Safety Monitor | Solar Dryer IoT</title>
+      <meta
+        name="description"
+        content="Real-time threshold alert monitoring, sensor fault logs, buzzer fail-safe diagnostics, and event acknowledgment."
+      />
 
-        <button
-          onClick={handleRequestPermission}
-          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-xs"
-        >
-          <Bell className="w-3.5 h-3.5" />
-          <span>Enable Browser Notifications</span>
-        </button>
-      </div>
-
-      {/* Hardware Dual Buzzer Fail-safe Callout */}
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-xs flex items-start space-x-3 shadow-xs">
-        <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-        <div>
-          <h4 className="font-semibold text-emerald-900">ESP32 Hardware Autonomous Alert Resilience</h4>
-          <p className="text-slate-700 mt-0.5 leading-relaxed">
-            Local buzzers connected to <strong>GPIO 25 (Warning)</strong> and <strong>GPIO 26 (Critical)</strong> evaluate sensor limits directly on the ESP32 microcontroller in real-time. If Wi-Fi drops, backend servers stall, or the browser is closed, audible local protection remains 100% active.
-          </p>
-        </div>
-      </div>
-
-      {/* Active Alerts List */}
-      {activeAlerts.length > 0 && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50/40 p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-3">
+      <div className="space-y-6">
+        {/* Title Header */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-rose-600 animate-pulse" />
-              <h3 className="font-bold text-sm text-rose-900">
-                Active Alarms ({activeAlerts.length})
-              </h3>
+              <BellRing className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                Alerts, Thresholds & Dual-Buzzer Safety
+              </h1>
             </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Real-time threshold surveillance for drying trays, PCM core, power supply, and offline disconnection alerts.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              onClick={clearAllActiveAlerts}
-              className="text-xs text-rose-700 hover:text-rose-900 px-2 py-1 rounded bg-white border border-rose-200 shadow-2xs font-medium"
+              onClick={handleRequestPermission}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-xs"
             >
-              Acknowledge All
+              <Bell className="w-3.5 h-3.5" />
+              <span>{notificationStatus === "granted" ? "Notifications Enabled" : "Enable Browser Notifications"}</span>
             </button>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            {activeAlerts.map((alert) => (
-              <div
-                key={alert.id}
-                className="p-3 rounded-lg bg-white border border-rose-200 flex items-center justify-between text-xs shadow-2xs"
+        {/* Hardware Dual Buzzer Fail-safe Callout (Item 1 honesty requirement) */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-xs flex items-start space-x-3 shadow-xs">
+          <Volume2 className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <span>ESP32 Autonomous Dual-Buzzer Status (GPIO 25 Warning / GPIO 26 Critical)</span>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
+                  buzzerKnown
+                    ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                }`}
               >
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        alert.severity === "critical"
-                          ? "bg-rose-100 text-rose-800 border border-rose-200"
-                          : "bg-amber-100 text-amber-800 border border-amber-200"
-                      }`}
-                    >
-                      {alert.severity.toUpperCase()}
-                    </span>
-                    <strong className="text-slate-900">{alert.message}</strong>
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                    Sensor Value: <span className="text-rose-600 font-bold">{alert.value.toFixed(1)}</span> (Limit: {alert.threshold.toFixed(1)}) • Triggered: {formatTime(alert.timestamp)}
-                  </div>
-                </div>
+                {buzzerKnown ? "Buzzer Telemetry Confirmed" : "Buzzers: unknown"}
+              </span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              {buzzerKnown ? (
+                <>
+                  ESP32 firmware is reporting active local buzzer hardware. In the event of Wi-Fi loss, server outage, or closed browser, the onboard buzzer logic enforces warning and critical safety autonomously.
+                </>
+              ) : (
+                <>
+                  Hardware armed status is unconfirmed until the ESP32 reports its buzzer state (<code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">buzzer1_ok</code>, <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">buzzer2_ok</code>) in the telemetry frame. Firmware contains hardcoded threshold fallbacks.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
 
-                <button
-                  onClick={() => acknowledgeAlert(alert.id)}
-                  className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200"
-                >
-                  Dismiss
-                </button>
+        {/* Active Critical & Warning Alerts Section */}
+        {activeAlerts.length > 0 && (
+          <div className="rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <ShieldAlert className="w-5 h-5 text-rose-600 dark:text-rose-400 animate-bounce" />
+                <h2 className="font-bold text-sm text-rose-900 dark:text-rose-200">
+                  Active Alerts ({activeAlerts.length})
+                </h2>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Threshold Configuration Rules Table */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-        <h3 className="font-semibold text-sm text-slate-900 mb-3">
-          Configurable Sensor Thresholds, Hysteresis & Cooldowns
-        </h3>
-
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[10px]">
-              <tr>
-                <th className="py-2.5 px-3">Rule Name & Sensor</th>
-                <th className="py-2.5 px-3">Condition</th>
-                <th className="py-2.5 px-3">Threshold</th>
-                <th className="py-2.5 px-3">Hysteresis</th>
-                <th className="py-2.5 px-3">Cooldown</th>
-                <th className="py-2.5 px-3">Severity</th>
-                <th className="py-2.5 px-3 text-right">Enabled</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
-              {rulesState.map((rule) => (
-                <tr key={rule.id} className="hover:bg-slate-50">
-                  <td className="py-2.5 px-3">
-                    <span className="font-sans font-medium text-slate-900 block">{rule.message}</span>
-                    <span className="text-[10px] text-slate-500 uppercase">{rule.sensor}</span>
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-600">
-                    {rule.condition === "gt" ? "Exceeds (>)" : "Drops Below (<)"}
-                  </td>
-                  <td className="py-2.5 px-3">
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={rule.threshold}
-                      onChange={(e) => handleThresholdChange(rule.id, parseFloat(e.target.value) || 0)}
-                      className="w-16 bg-slate-50 border border-slate-300 rounded px-1.5 py-0.5 text-emerald-700 font-bold"
-                    />
-                    <span className="ml-1 text-slate-500">
-                      {rule.sensor === "batteryVoltage" ? "V" : "°C"}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3">
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={rule.hysteresis}
-                      onChange={(e) => handleHysteresisChange(rule.id, parseFloat(e.target.value) || 0)}
-                      className="w-14 bg-slate-50 border border-slate-300 rounded px-1.5 py-0.5 text-slate-800"
-                    />
-                    <span className="ml-1 text-slate-500">
-                      {rule.sensor === "batteryVoltage" ? "V" : "°C"}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3">
-                    <input
-                      type="number"
-                      step="5"
-                      value={rule.cooldownMs / 1000}
-                      onChange={(e) => handleCooldownChange(rule.id, parseInt(e.target.value) || 10)}
-                      className="w-14 bg-slate-50 border border-slate-300 rounded px-1.5 py-0.5 text-slate-800"
-                    />
-                    <span className="ml-1 text-slate-500">sec</span>
-                  </td>
-                  <td className="py-2.5 px-3">
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        rule.severity === "critical"
-                          ? "bg-rose-100 text-rose-800 border border-rose-200"
-                          : "bg-amber-100 text-amber-800 border border-amber-200"
-                      }`}
-                    >
-                      {rule.severity.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <button
-                      onClick={() => handleToggleRule(rule.id)}
-                      className={`px-2 py-1 rounded text-[10px] font-sans font-bold transition-colors ${
-                        rule.enabled
-                          ? "bg-emerald-600 text-white"
-                          : "bg-slate-100 text-slate-400 border border-slate-200"
-                      }`}
-                    >
-                      {rule.enabled ? "ACTIVE" : "MUTED"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Historical Alert Log */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-        <h3 className="font-semibold text-sm text-slate-900 mb-3">
-          Historical Alert Log
-        </h3>
-
-        {alertHistory.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-500 font-sans">
-            No historical alarms logged. All parameters operating within normal thresholds.
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-72 overflow-y-auto">
-            {alertHistory.map((item) => (
-              <div
-                key={item.id}
-                className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
-              >
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-slate-500 text-[11px]">{formatDate(item.timestamp)}</span>
-                    <strong className="text-slate-800">{item.message}</strong>
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-500">
-                    Recorded: {item.value.toFixed(1)} (Threshold: {item.threshold.toFixed(1)})
-                  </span>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] bg-slate-200 text-slate-700">
-                  {item.status}
+              {!isAdmin && (
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5" /> Login as Admin to Acknowledge
                 </span>
-              </div>
-            ))}
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {activeAlerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`p-3.5 rounded-lg border bg-white dark:bg-slate-900 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    alert.severity === "critical"
+                      ? "border-rose-300 dark:border-rose-800"
+                      : alert.severity === "offline"
+                      ? "border-rose-200 dark:border-rose-900"
+                      : "border-amber-300 dark:border-amber-800"
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    {alert.severity === "critical" ? (
+                      <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    ) : alert.severity === "offline" ? (
+                      <WifiOff className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                            alert.severity === "critical" || alert.severity === "offline"
+                              ? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300"
+                              : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+                          }`}
+                        >
+                          {alert.severity}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                          {alert.source}
+                        </span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                          • {formatRelativeTime(alert.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 mt-1">
+                        {alert.message}
+                      </p>
+                      <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-1">
+                        Measured Value: <strong>{alert.value !== null && alert.value !== undefined ? `${alert.value.toFixed(1)}°C` : "--"}</strong> | Threshold Limit: <strong>{alert.threshold !== null && alert.threshold !== undefined ? `${alert.threshold.toFixed(1)}°C` : "--"}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center self-end sm:self-center">
+                    {isAdmin ? (
+                      <button
+                        onClick={() => handleAcknowledge(alert.id)}
+                        disabled={ackLoadingId === alert.id}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 shadow-xs transition-colors disabled:opacity-50"
+                      >
+                        {ackLoadingId === alert.id ? "Acknowledging..." : "Acknowledge"}
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic">
+                        Read-only
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Filters and Event History */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-slate-500" />
+              <h2 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                Alert Event History & Audit Log
+              </h2>
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  { id: "all", label: "All" },
+                  { id: "warning", label: "Warning" },
+                  { id: "critical", label: "Critical" },
+                  { id: "fault", label: "Fault" },
+                  { id: "offline", label: "Offline" },
+                  { id: "acknowledged", label: "Acknowledged" },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilter(tab.id)}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors ${
+                    filter === tab.id
+                      ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th className="py-2.5 px-3">Timestamp</th>
+                  <th className="py-2.5 px-3">Severity</th>
+                  <th className="py-2.5 px-3">Source Channel</th>
+                  <th className="py-2.5 px-3">Value</th>
+                  <th className="py-2.5 px-3">Threshold</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                {filteredEvents.length > 0 ? (
+                  filteredEvents.map((event) => (
+                    <tr key={event.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                        {formatExactDateTime(event.timestamp)}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                            event.severity === "critical" || event.severity === "offline"
+                              ? "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                              : event.severity === "warning"
+                              ? "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                          }`}
+                        >
+                          {event.severity}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
+                        {event.source}
+                      </td>
+                      <td className="py-2.5 px-3 font-bold tabular-nums">
+                        {event.value !== null && event.value !== undefined
+                          ? `${event.value.toFixed(1)}°C`
+                          : "--"}
+                      </td>
+                      <td className="py-2.5 px-3 tabular-nums text-slate-500 dark:text-slate-400">
+                        {event.threshold !== null && event.threshold !== undefined
+                          ? `${event.threshold.toFixed(1)}°C`
+                          : "--"}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] ${
+                            event.status === "acknowledged"
+                              ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                              : "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                          }`}
+                        >
+                          {event.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        {event.status === "active" ? (
+                          isAdmin ? (
+                            <button
+                              onClick={() => handleAcknowledge(event.id)}
+                              className="px-2 py-1 rounded text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
+                            >
+                              Acknowledge
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Login required</span>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-sans">
+                            {event.acknowledgedAt ? formatExactDateTime(event.acknowledgedAt) : "Acknowledged"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-400 dark:text-slate-500 font-sans">
+                      No alert events matching the selected filter.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card Layout (Item 23 & 24) */}
+          <div className="md:hidden space-y-2.5">
+            {filteredEvents.length > 0 ? (
+              filteredEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 text-xs space-y-1.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                        event.severity === "critical" || event.severity === "offline"
+                          ? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300"
+                          : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+                      }`}
+                    >
+                      {event.severity}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {formatRelativeTime(event.timestamp)}
+                    </span>
+                  </div>
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">
+                    {event.source}
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                    {event.message}
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-mono text-[11px]">
+                    <div>
+                      Val: <strong>{event.value?.toFixed(1)}°C</strong> | Limit: <strong>{event.threshold?.toFixed(1)}°C</strong>
+                    </div>
+                    <div>
+                      {event.status === "active" && isAdmin ? (
+                        <button
+                          onClick={() => handleAcknowledge(event.id)}
+                          className="px-2 py-0.5 rounded text-[10px] bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-sans"
+                        >
+                          Ack
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 capitalize">{event.status}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-slate-400 text-xs">
+                No alert events found for this filter.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Item 10: Sensor Faults Diagnostic Section with Timestamps in Alerts */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+          <div className="flex items-center space-x-2 mb-3">
+            <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <h2 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+              Sensor Bus Fault History
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Hardware 1-Wire communication errors and probe faults registered by the system.
+          </p>
+
+          {faultHistory && faultHistory.length > 0 ? (
+            <div className="space-y-2">
+              {faultHistory.map((fault) => (
+                <div
+                  key={fault.id}
+                  className="p-3 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-mono">
+                      {fault.faultType}
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100 uppercase">
+                      {fault.sensor}
+                    </span>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      - {fault.message}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                    {formatExactDateTime(fault.timestamp)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500">
+              No hardware probe faults on record.
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

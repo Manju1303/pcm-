@@ -1,6 +1,10 @@
 /**
  * @file config.h
  * @brief Network and Operational Configuration for ESP32 Solar Dryer
+ * 
+ * IMPORTANT:
+ * - Rotate API_KEY to match DEVICE_API_KEY in your Next.js server environment (.env).
+ * - Fallback thresholds below ensure autonomous local buzzer operation when Wi-Fi is unavailable.
  */
 
 #ifndef CONFIG_H
@@ -10,36 +14,39 @@
 
 // --- Device Identity ---
 #define DEVICE_ID                 "solar-dryer-01"
-#define FIRMWARE_VERSION          "v1.0.0-prod"
+#define FIRMWARE_VERSION          "v1.1.0-prod"
 
 // --- Wi-Fi Credentials ---
 // Configure for your local 2.4GHz Wi-Fi network
 #define WIFI_SSID                 "YOUR_WIFI_SSID"
 #define WIFI_PASSWORD             "YOUR_WIFI_PASSWORD"
 
-// --- Backend API Ingestion Endpoint ---
-// Replace with your deployed Next.js URL or local server IP (e.g. "http://192.168.1.100:3000/api/telemetry")
-#define API_SERVER_URL            "http://192.168.1.100:3000/api/telemetry"
-#define API_KEY                   "sd_secret_key_college_dryer_2026"  // Must match API_INGEST_KEY in .env
+// --- Backend API Ingestion Endpoint & Authentication ---
+// Replace with your deployed Next.js URL or local server IP (e.g. "https://pcm-six.vercel.app/api/telemetry")
+#define API_SERVER_URL            "https://pcm-six.vercel.app/api/telemetry"
+#define CONFIG_SERVER_URL         "https://pcm-six.vercel.app/api/device-config"
+
+// IMPORTANT SECURITY NOTE: Replace with your actual secret key matching DEVICE_API_KEY in .env.local / Vercel
+#define API_KEY                   "YOUR_DEVICE_API_KEY"
 
 // --- Reporting Intervals (milliseconds) ---
-#define TELEMETRY_INTERVAL_MS     10000   // Send reading every 10 seconds
+#define TELEMETRY_INTERVAL_MS     60000   // Send reading every 60 seconds (matches server sendIntervalSec)
+#define CONFIG_FETCH_INTERVAL_MS  300000  // Refresh thresholds from server every 5 minutes
 #define OLED_REFRESH_INTERVAL_MS  2000    // Refresh display every 2 seconds
 #define SENSOR_READ_INTERVAL_MS   3000    // Read temperature probes every 3 seconds
 
-// --- Operational & Alert Thresholds (°C) ---
-#define TRAY1_WARN_HIGH           55.0f
-#define TRAY1_CRIT_HIGH           65.0f
-#define TRAY1_WARN_LOW            30.0f
+// --- Hardcoded Offline Fallback Thresholds (°C) ---
+// Used directly by onboard buzzer safety logic when offline or before config fetch
+#define FALLBACK_TRAY1_WARN_HIGH  58.0f
+#define FALLBACK_TRAY1_CRIT_HIGH  68.0f
+#define FALLBACK_TRAY2_WARN_HIGH  58.0f
+#define FALLBACK_TRAY2_CRIT_HIGH  68.0f
 
-#define TRAY2_WARN_HIGH           55.0f
-#define TRAY2_CRIT_HIGH           65.0f
-#define TRAY2_WARN_LOW            30.0f
-
-#define PCM_CHARGE_START          45.0f   // PCM begins absorbing sensible/latent heat
-#define PCM_PHASE_CHANGE_TEMP     50.0f   // Latent phase change nominal plateau (e.g. paraffin RT50)
-#define PCM_WARN_HIGH             60.0f   // Overheat threshold
-#define PCM_CRIT_HIGH             70.0f   // Critical threshold
+#define FALLBACK_PCM_CHARGE_START 45.0f   // PCM begins absorbing sensible/latent heat
+#define FALLBACK_PCM_PLATEAU      50.0f   // Latent phase change nominal plateau (e.g. paraffin RT50)
+#define FALLBACK_PCM_WARN_HIGH    60.0f   // Overheat threshold
+#define FALLBACK_PCM_CRIT_HIGH    72.0f   // Critical threshold
+#define FALLBACK_DISCHARGE_DELTA  2.0f    // Discharge threshold delta (PCM > Tray Mean + Delta)
 
 // Alert Hysteresis to prevent buzzer chatter (°C)
 #define ALERT_HYSTERESIS          1.5f

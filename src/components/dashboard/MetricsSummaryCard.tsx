@@ -2,12 +2,8 @@
 
 import React from "react";
 import { PeriodSummaryMetrics } from "@/types/telemetry";
-import {
-  BarChart2,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-} from "lucide-react";
+import { formatTemp } from "@/lib/utils";
+import { BarChart3 } from "lucide-react";
 
 interface MetricsSummaryCardProps {
   metrics: PeriodSummaryMetrics;
@@ -18,74 +14,82 @@ export function MetricsSummaryCard({
   metrics,
   periodLabel,
 }: MetricsSummaryCardProps) {
-  const renderSensorSummary = (
-    name: string,
-    colorClass: string,
-    data: { min: number; max: number; avg: number; delta: number }
-  ) => {
-    const isPositive = data.delta > 0;
-    const isZero = data.delta === 0;
-
-    return (
-      <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
-        <div className="flex items-center justify-between mb-2">
-          <span className={`text-xs font-semibold ${colorClass}`}>{name}</span>
-          <div className="flex items-center space-x-1 text-xs">
-            {isPositive ? (
-              <span className="flex items-center text-amber-700 font-mono font-medium">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                +{data.delta}°C
-              </span>
-            ) : isZero ? (
-              <span className="flex items-center text-slate-500 font-mono font-medium">
-                <Minus className="w-3.5 h-3.5" />
-                0.0°C
-              </span>
-            ) : (
-              <span className="flex items-center text-sky-700 font-mono font-medium">
-                <ArrowDownRight className="w-3.5 h-3.5" />
-                {data.delta}°C
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-200 font-mono">
-          <div>
-            <div className="text-[10px] text-slate-500 uppercase">Min</div>
-            <div className="text-xs font-semibold text-slate-800">{data.min}°C</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-slate-500 uppercase">Avg</div>
-            <div className="text-xs font-bold text-slate-900">{data.avg}°C</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-slate-500 uppercase">Max</div>
-            <div className="text-xs font-semibold text-slate-800">{data.max}°C</div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const sensors = [
+    {
+      id: "tray1",
+      name: "Tray 1 - Upper Deck",
+      data: metrics.tray1,
+      color: "text-sky-700 dark:text-sky-300",
+      accent: "border-sky-200 dark:border-sky-800",
+    },
+    {
+      id: "tray2",
+      name: "Tray 2 - Lower Deck",
+      data: metrics.tray2,
+      color: "text-indigo-700 dark:text-indigo-300",
+      accent: "border-indigo-200 dark:border-indigo-800",
+    },
+    {
+      id: "pcm",
+      name: "PCM Thermal Core",
+      data: metrics.pcm,
+      color: "text-emerald-700 dark:text-emerald-300",
+      accent: "border-emerald-200 dark:border-emerald-800",
+    },
+  ];
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
         <div className="flex items-center space-x-2">
-          <BarChart2 className="w-5 h-5 text-emerald-600" />
-          <h3 className="font-semibold text-sm text-slate-900">
-            Thermal Statistical Metrics ({periodLabel})
+          <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+            Statistical Temperature Summary
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-slate-500">
-          Recorded Frames: <strong className="text-slate-800">{metrics.count}</strong>
+        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+          Period: <strong className="text-slate-700 dark:text-slate-200 font-sans">{periodLabel}</strong> ({metrics.count} samples)
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {renderSensorSummary("Tray 1 (Top Deck)", "text-sky-700", metrics.tray1)}
-        {renderSensorSummary("Tray 2 (Bottom Deck)", "text-indigo-700", metrics.tray2)}
-        {renderSensorSummary("PCM Thermal Reservoir", "text-emerald-700", metrics.pcm)}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {sensors.map((sensor) => (
+          <div
+            key={sensor.id}
+            className={`p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border ${sensor.accent} space-y-2`}
+          >
+            <h4 className={`text-xs font-bold uppercase tracking-wider ${sensor.color}`}>
+              {sensor.name}
+            </h4>
+
+            <div className="grid grid-cols-4 gap-2 pt-1 text-center font-mono text-xs">
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-slate-200/80 dark:border-slate-700">
+                <span className="text-[10px] text-slate-400 block uppercase">Min</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {formatTemp(sensor.data.min)}{sensor.data.min !== null ? "°C" : ""}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-slate-200/80 dark:border-slate-700">
+                <span className="text-[10px] text-slate-400 block uppercase">Avg</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {formatTemp(sensor.data.avg)}{sensor.data.avg !== null ? "°C" : ""}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-slate-200/80 dark:border-slate-700">
+                <span className="text-[10px] text-slate-400 block uppercase">Max</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {formatTemp(sensor.data.max)}{sensor.data.max !== null ? "°C" : ""}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-slate-200/80 dark:border-slate-700">
+                <span className="text-[10px] text-slate-400 block uppercase">&Delta;</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {formatTemp(sensor.data.delta)}{sensor.data.delta !== null ? "°" : ""}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

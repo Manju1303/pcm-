@@ -1,4 +1,4 @@
-import { AlertRule, AlertEvent, TelemetryReading } from "@/types/telemetry";
+import { AlertRule, AlertEvent, TelemetryReading, SensorFaultEvent } from "@/types/telemetry";
 
 export const DEFAULT_ALERT_RULES: AlertRule[] = [
   {
@@ -7,7 +7,7 @@ export const DEFAULT_ALERT_RULES: AlertRule[] = [
     condition: "gt",
     threshold: 58.0,
     hysteresis: 1.5,
-    cooldownMs: 60000, // 1 minute cooldown
+    cooldownMs: 60000,
     severity: "warning",
     message: "Tray 1 temperature exceeded safe drying threshold (58.0°C)",
     enabled: true,
@@ -35,6 +35,17 @@ export const DEFAULT_ALERT_RULES: AlertRule[] = [
     enabled: true,
   },
   {
+    id: "rule-tray2-crit",
+    sensor: "tray2",
+    condition: "gt",
+    threshold: 68.0,
+    hysteresis: 2.0,
+    cooldownMs: 30000,
+    severity: "critical",
+    message: "CRITICAL: Tray 2 severe overheat! Potential crop scorch risk (68.0°C)",
+    enabled: true,
+  },
+  {
     id: "rule-pcm-high",
     sensor: "pcm",
     condition: "gt",
@@ -53,7 +64,7 @@ export const DEFAULT_ALERT_RULES: AlertRule[] = [
     hysteresis: 2.0,
     cooldownMs: 30000,
     severity: "critical",
-    message: "CRITICAL: PCM thermal reservoir thermal safety cutoff breached! (72.0°C)",
+    message: "CRITICAL: PCM thermal reservoir safety cutoff breached! (72.0°C)",
     enabled: true,
   },
   {
@@ -74,7 +85,6 @@ const alertCooldowns: Record<string, number> = {};
 
 /**
  * Evaluates active reading against configured rules, observing hysteresis and cooldowns.
- * Stale or disconnected sensor data is rejected from evaluating as 'normal'.
  */
 export function evaluateTelemetryAlerts(
   reading: TelemetryReading,
@@ -103,12 +113,10 @@ export function evaluateTelemetryAlerts(
       isStaleOrInvalid = sensorVal === null;
     }
 
-    // Skip if sensor reading is invalid / disconnected
     if (isStaleOrInvalid || sensorVal === null) {
       continue;
     }
 
-    // Check condition with hysteresis
     let conditionMet = false;
     if (rule.condition === "gt") {
       conditionMet = sensorVal >= rule.threshold;
@@ -136,12 +144,46 @@ export function evaluateTelemetryAlerts(
     }
   }
 
+  // Also convert any detected sensor faults into warning/critical alert events
+  if (reading.faults && reading.faults.length > 0) {
+    for (const fault of reading.faults) {
+      const faultKey = `fault-alert-${fault.sensor}-${fault.faultType}`;
+      const lastTriggered = alertCooldowns[faultKey] || 0;
+      if (currentTimeMs - lastTriggered >= 60000) {
+        alertCooldowns[faultKey] = currentTimeMs;
+        triggeredEvents.push({
+          id: `alert-${faultKey}-${currentTimeMs}`,
+          sensor: fault.sensor,
+          severity: fault.faultType === "disconnected" || fault.faultType === "out_of_range" ? "critical" : "warning",
+          value: fault.rawValue ?? undefined,
+          message: `FAULT: ${fault.message}`,
+          timestamp: fault.timestamp,
+          status: "active",
+        });
+      }
+    }
+  }
+
   return triggeredEvents;
 }
 
 /**
- * Requests browser notification permission gracefully
+ * Creates a device offline alert event
  */
+export function createDeviceOfflineAlert(lastSeenIso: string | null): AlertEvent {
+  const now = new Date().toISOString();
+  return {
+    id: `alert-device-offline-${Date.now()}`,
+    sensor: "device",
+    severity: "critical",
+    message: `Device offline: No telemetry frame received within send window (last seen: ${
+      lastSeenIso ? new Date(lastSeenIso).toLocaleTimeString() : "Never"
+    })`,
+    timestamp: now,
+    status: "active",
+  };
+}
+
 export async function requestBrowserNotificationPermission(): Promise<boolean> {
   if (typeof window === "undefined" || !("Notification" in window)) {
     return false;
@@ -156,21 +198,18 @@ export async function requestBrowserNotificationPermission(): Promise<boolean> {
   return false;
 }
 
-/**
- * Fires native browser notification if granted
- */
 export function sendBrowserNotification(title: string, body: string, severity: "warning" | "critical") {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission === "granted") {
     try {
       new Notification(`[${severity.toUpperCase()}] ${title}`, {
         body,
-        icon: "/icons/icon-192x192.png",
-        badge: "/icons/icon-192x192.png",
+        icon: "/icons/icon-192x192.svg",
+        badge: "/icons/icon-192x192.svg",
         tag: `dryer-${Date.now()}`,
       });
     } catch (e) {
-      console.warn("Browser notification could not be delivered", e);
+      console.warn("Browser notification error:", e);
     }
   }
 }

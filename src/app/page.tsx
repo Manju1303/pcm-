@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { useTelemetry } from "@/context/TelemetryContext";
 import { SensorCard } from "@/components/dashboard/SensorCard";
 import { OperatingModeCard } from "@/components/dashboard/OperatingModeCard";
@@ -8,7 +9,17 @@ import { SensorHealthPanel } from "@/components/dashboard/SensorHealthPanel";
 import { MetricsSummaryCard } from "@/components/dashboard/MetricsSummaryCard";
 import { TemperatureMultiChart, TimeFilterOption } from "@/components/dashboard/TemperatureMultiChart";
 import { LatestReadingsTable } from "@/components/dashboard/LatestReadingsTable";
+import { ProjectStatusCard } from "@/components/dashboard/ProjectStatusCard";
 import { computePeriodMetrics } from "@/lib/metrics";
+import { formatRelativeTime, formatExactDateTime } from "@/lib/utils";
+import {
+  Activity,
+  Clock,
+  AlertTriangle,
+  Milestone,
+  CheckCircle2,
+  ShieldAlert,
+} from "lucide-react";
 
 export default function DashboardOverviewPage() {
   const {
@@ -16,9 +27,14 @@ export default function DashboardOverviewPage() {
     history,
     isOnline,
     isStale,
-    isDemoMode,
+    isOffline,
+    lastSyncTime,
     pcmConfig,
-    alertRules,
+    thresholds,
+    activeAlerts,
+    deviceMetadata,
+    featureFlags,
+    projectPhases,
   } = useTelemetry();
 
   const [timeFilter, setTimeFilter] = useState<TimeFilterOption>("24h");
@@ -58,7 +74,7 @@ export default function DashboardOverviewPage() {
   const getTrendData = (sensor: "tray1" | "tray2" | "pcm") => {
     if (history.length < 2) return { trend: "steady" as const, delta: 0 };
     const latest = history[history.length - 1]?.temperatures[sensor];
-    const previous = history[Math.max(0, history.length - 6)]?.temperatures[sensor]; // ~1 min ago
+    const previous = history[Math.max(0, history.length - 6)]?.temperatures[sensor];
 
     if (latest === null || previous === null || latest === undefined || previous === undefined) {
       return { trend: "steady" as const, delta: 0 };
@@ -74,22 +90,97 @@ export default function DashboardOverviewPage() {
   const tray2Trend = getTrendData("tray2");
   const pcmTrend = getTrendData("pcm");
 
-  // Threshold lookup
-  const tray1Warn = alertRules.find((r) => r.id === "rule-tray1-high")?.threshold ?? 58.0;
-  const tray1Crit = alertRules.find((r) => r.id === "rule-tray1-crit")?.threshold ?? 68.0;
-  const tray2Warn = alertRules.find((r) => r.id === "rule-tray2-high")?.threshold ?? 58.0;
-  const tray2Crit = 68.0;
-  const pcmWarn = alertRules.find((r) => r.id === "rule-pcm-high")?.threshold ?? 60.0;
-  const pcmCrit = alertRules.find((r) => r.id === "rule-pcm-crit")?.threshold ?? 72.0;
+  const tray1Warn = thresholds?.tray1Warn ?? 58.0;
+  const tray1Crit = thresholds?.tray1Crit ?? 68.0;
+  const tray2Warn = thresholds?.tray2Warn ?? 58.0;
+  const tray2Crit = thresholds?.tray2Crit ?? 68.0;
+  const pcmWarn = thresholds?.pcmWarn ?? 60.0;
+  const pcmCrit = thresholds?.pcmCrit ?? 72.0;
 
   const trayAvg =
     currentReading && currentReading.temperatures.tray1 !== null && currentReading.temperatures.tray2 !== null
       ? (currentReading.temperatures.tray1 + currentReading.temperatures.tray2) / 2
       : null;
 
+  // Active Project Phase summary
+  const currentPhase = projectPhases.find((p) => p.status === "In progress") ||
+    projectPhases.find((p) => p.status === "Not started") ||
+    projectPhases[0] || { phaseNumber: 1, title: "Hardware identification & wiring", status: "In progress" };
+
   return (
     <div className="space-y-6">
-      {/* 1. Operating Status Banner Card */}
+      {/* 1. Overview Order Item 1: 'System at a glance' row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Operating Mode Glance */}
+        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+            Chamber Mode
+          </span>
+          <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+            {currentReading?.operatingStatus ?? "Standby"}
+          </div>
+        </div>
+
+        {/* Device Last Seen */}
+        <div
+          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs cursor-help"
+          title={formatExactDateTime(lastSyncTime)}
+        >
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+            Device Last Seen
+          </span>
+          <div className="text-xs sm:text-sm font-bold font-mono">
+            {isOffline || !lastSyncTime ? (
+              <span className="text-rose-600 dark:text-rose-400">
+                Offline ({lastSyncTime ? formatRelativeTime(lastSyncTime) : "Never"})
+              </span>
+            ) : isStale ? (
+              <span className="text-amber-600 dark:text-amber-400">
+                Stale ({formatRelativeTime(lastSyncTime)})
+              </span>
+            ) : (
+              <span className="text-emerald-700 dark:text-emerald-400">
+                Online ({formatRelativeTime(lastSyncTime)})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Active Alerts */}
+        <Link
+          href="/alerts"
+          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 transition-colors block"
+        >
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+            Active Alerts
+          </span>
+          <div className="text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+            {activeAlerts.length > 0 ? (
+              <>
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
+                <span className="text-rose-600 font-mono">{activeAlerts.length} Active</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-emerald-700 dark:text-emerald-400">All Clear</span>
+              </>
+            )}
+          </div>
+        </Link>
+
+        {/* Project Phase */}
+        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+            College Project Phase
+          </span>
+          <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+            Phase {currentPhase.phaseNumber}: {currentPhase.status}
+          </div>
+        </div>
+      </div>
+
+      {/* Operating Status Banner Card */}
       <OperatingModeCard
         mode={currentReading?.operatingStatus ?? "Unknown/Not Configured"}
         pcmConfig={pcmConfig}
@@ -97,11 +188,11 @@ export default function DashboardOverviewPage() {
         pcmTemp={currentReading?.temperatures.pcm ?? null}
       />
 
-      {/* 2. Primary Three Temperature Sensor Cards */}
+      {/* 2. Overview Order Item 2: The 3 Primary Temperature Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <SensorCard
-          title="Tray 1 Temperature"
-          subtitle="Upper Produce Drying Deck"
+          title="Tray 1 - Upper Deck"
+          subtitle="Collector Air Inlet Zone"
           value={currentReading?.temperatures.tray1 ?? null}
           status={currentReading?.sensors.tray1 ?? "disconnected"}
           trend={tray1Trend.trend}
@@ -110,11 +201,12 @@ export default function DashboardOverviewPage() {
           warnThreshold={tray1Warn}
           critThreshold={tray1Crit}
           iconType="tray1"
+          romAddress={currentReading?.romAddresses?.tray1}
         />
 
         <SensorCard
-          title="Tray 2 Temperature"
-          subtitle="Lower Produce Drying Deck"
+          title="Tray 2 - Lower Deck"
+          subtitle="Intermediate Exhaust Flow Zone"
           value={currentReading?.temperatures.tray2 ?? null}
           status={currentReading?.sensors.tray2 ?? "disconnected"}
           trend={tray2Trend.trend}
@@ -123,11 +215,12 @@ export default function DashboardOverviewPage() {
           warnThreshold={tray2Warn}
           critThreshold={tray2Crit}
           iconType="tray2"
+          romAddress={currentReading?.romAddresses?.tray2}
         />
 
         <SensorCard
-          title="PCM Reservoir Temp"
-          subtitle="Paraffin RT-50 Storage Bed"
+          title="PCM Thermal Core"
+          subtitle="Phase Change Material Storage Bed"
           value={currentReading?.temperatures.pcm ?? null}
           status={currentReading?.sensors.pcm ?? "disconnected"}
           trend={pcmTrend.trend}
@@ -136,10 +229,11 @@ export default function DashboardOverviewPage() {
           warnThreshold={pcmWarn}
           critThreshold={pcmCrit}
           iconType="pcm"
+          romAddress={currentReading?.romAddresses?.pcm}
         />
       </div>
 
-      {/* 3. Interactive Multi-Series Temperature Line Chart */}
+      {/* 3. Overview Order Item 3: Multi-series Chart */}
       <TemperatureMultiChart
         data={filteredHistory}
         filter={timeFilter}
@@ -151,9 +245,11 @@ export default function DashboardOverviewPage() {
           setCustomEnd(e);
         }}
         pcmPhaseChangeTemp={pcmConfig.phaseChangeTempC}
+        warnThreshold={tray1Warn}
+        critThreshold={tray1Crit}
       />
 
-      {/* 4. Statistical Metrics Summary for Selected Interval */}
+      {/* 4. Overview Order Item 4: Statistical Metrics */}
       <MetricsSummaryCard
         metrics={periodMetrics}
         periodLabel={
@@ -165,7 +261,7 @@ export default function DashboardOverviewPage() {
         }
       />
 
-      {/* 5. Sensor & Hardware Health Diagnostics */}
+      {/* Sensor & Hardware Health Diagnostics */}
       <SensorHealthPanel
         sensors={
           currentReading?.sensors ?? {
@@ -175,11 +271,18 @@ export default function DashboardOverviewPage() {
           }
         }
         batteryVoltage={currentReading?.batteryVoltage ?? null}
+        buzzerState={deviceMetadata.buzzerState}
+        featureFlags={featureFlags}
+        moisturePercent={currentReading?.moisturePercent ?? null}
         isOnline={isOnline}
         isStale={isStale}
+        isOffline={isOffline}
       />
 
-      {/* 6. Latest Telemetry Log & CSV Export */}
+      {/* Project Status Card (Read-only on Overview) */}
+      <ProjectStatusCard phases={projectPhases} />
+
+      {/* 5. Overview Order Item 5: Telemetry Log Table */}
       <LatestReadingsTable readings={history} />
     </div>
   );

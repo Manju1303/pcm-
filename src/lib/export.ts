@@ -13,23 +13,35 @@ export function generateTelemetryCsv(readings: TelemetryReading[]): string {
     "PCM Status",
     "Battery Voltage (V)",
     "Operating Status",
+    "Faults",
     "Data Source",
   ];
 
   const rows = readings.map((r) => {
-    const localTime = new Date(r.timestamp).toLocaleString();
+    let localTime = "";
+    try {
+      localTime = new Date(r.timestamp).toLocaleString();
+    } catch {
+      localTime = r.timestamp;
+    }
+
+    const faultsList = r.faults && r.faults.length > 0
+      ? r.faults.map((f) => `${f.sensor}:${f.faultType}`).join("; ")
+      : "None";
+
     return [
       `"${r.timestamp}"`,
       `"${localTime}"`,
       `"${r.deviceId}"`,
-      r.temperatures.tray1 !== null ? r.temperatures.tray1.toFixed(1) : "N/A",
+      r.temperatures.tray1 !== null && r.temperatures.tray1 !== undefined ? r.temperatures.tray1.toFixed(1) : "--",
       r.sensors.tray1,
-      r.temperatures.tray2 !== null ? r.temperatures.tray2.toFixed(1) : "N/A",
+      r.temperatures.tray2 !== null && r.temperatures.tray2 !== undefined ? r.temperatures.tray2.toFixed(1) : "--",
       r.sensors.tray2,
-      r.temperatures.pcm !== null ? r.temperatures.pcm.toFixed(1) : "N/A",
+      r.temperatures.pcm !== null && r.temperatures.pcm !== undefined ? r.temperatures.pcm.toFixed(1) : "--",
       r.sensors.pcm,
-      r.batteryVoltage !== undefined && r.batteryVoltage !== null ? r.batteryVoltage.toFixed(2) : "N/A",
+      r.batteryVoltage !== undefined && r.batteryVoltage !== null ? r.batteryVoltage.toFixed(2) : "--",
       `"${r.operatingStatus}"`,
+      `"${faultsList}"`,
       r.isDemo ? "DEMO_SIMULATION" : "REAL_HARDWARE",
     ].join(",");
   });

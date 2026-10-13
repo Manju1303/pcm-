@@ -1,13 +1,13 @@
 {
   "name": "Solar Dryer IoT Monitor with PCM Storage",
   "short_name": "Solar Dryer",
-  "description": "IoT-Based Solar Dryer with Phase Change Material Thermal Energy Storage and Temperature Monitoring",
+  "description": "Monitoring dashboard and installable PWA for an ESP32 solar dryer with PCM thermal storage",
   "start_url": "/",
   "id": "/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#0f172a",
-  "background_color": "#080e1a",
+  "theme_color": "#059669",
+  "background_color": "#0f172a",
   "categories": ["utilities", "productivity", "education"],
   "icons": [
     {

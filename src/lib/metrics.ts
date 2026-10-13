@@ -2,7 +2,7 @@ import { TelemetryReading, PeriodSummaryMetrics, TemperatureMetrics } from "@/ty
 
 function calculateSingleSensorMetrics(values: number[]): TemperatureMetrics {
   if (values.length === 0) {
-    return { min: 0, max: 0, avg: 0, delta: 0, count: 0 };
+    return { min: null, max: null, avg: null, delta: null, count: 0 };
   }
 
   let min = values[0];
