@@ -125,7 +125,7 @@ export function SensorCard({
         }`}
       />
 
-      {/* Top row: Title and Status pill */}
+      {/* Top row: Title and Status dot */}
       <div className="flex items-start justify-between relative z-10">
         <div className="flex items-center space-x-2.5">
           <div className="p-2.5 rounded-xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
@@ -137,14 +137,16 @@ export function SensorCard({
           </div>
         </div>
 
-        {/* Status Pill with icon + text */}
-        <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full border ${statusBadgeColor} flex items-center space-x-1`}>
-          <StatusIcon className="w-3 h-3 inline shrink-0" />
-          <span>{statusText}</span>
-        </span>
+        {/* Minimal Status Indicator */}
+        <div className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${statusBadgeColor} flex items-center space-x-1.5`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            isCritical ? "bg-rose-500 animate-ping" : isWarning ? "bg-amber-500" : isDisconnected ? "bg-slate-400" : "bg-emerald-500"
+          }`} />
+          <span>{isNormal ? "Online" : statusText}</span>
+        </div>
       </div>
 
-      {/* Main Temperature Display (Tabular Numbers) */}
+      {/* Main Temperature Display */}
       <div className="mt-4 flex items-baseline justify-between">
         <div className="flex items-baseline space-x-1">
           {isDisconnected ? (
@@ -213,19 +215,12 @@ export function SensorCard({
             }}
           />
         </div>
-        <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
-          <span>20°C</span>
-          <span>Warn: {warnThreshold}°C</span>
-          <span>Crit: {critThreshold}°C</span>
-        </div>
       </div>
 
-      {/* Bottom Footer: Timestamp & ROM Address */}
-      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-        <span className="font-mono text-[10px]">
-          {romAddress ? `ROM: ${romAddress.slice(0, 8)}...` : "ROM: Unassigned"}
-        </span>
-        <span className="font-mono text-slate-700 dark:text-slate-300">
+      {/* Bottom Footer: Timestamp */}
+      <div className="mt-3 pt-2 border-t border-slate-100/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
+        <span>Recorded</span>
+        <span className="font-mono text-slate-600 dark:text-slate-300">
           {timestamp ? formatTime(timestamp) : "--:--:--"}
         </span>
       </div>

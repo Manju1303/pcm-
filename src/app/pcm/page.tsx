@@ -42,27 +42,24 @@ export default function PcmThermalStoragePage() {
       />
       <div className="space-y-6">
         {/* Title */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
           <div className="flex items-center space-x-2">
             <Flame className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              PCM Thermal Energy Storage & Latent Heat Monitoring
+              PCM Thermal Storage
             </h1>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Thermodynamics of the Phase Change Material (PCM) bed, isothermal charging plateaus, and nocturnal heat release.
-          </p>
         </div>
 
       {/* PCM Temperature Graph with Phase Plateau Reference */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-              PCM Core Temperature Profile vs Phase Transition Plateau
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+              PCM Temperature Curve
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Amber line indicates nominal melting plateau ({pcmConfig.phaseChangeTempC}°C)
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              Plateau: {pcmConfig.phaseChangeTempC}°C
             </p>
           </div>
           <span className="font-mono text-xs text-emerald-700 dark:text-emerald-300 font-semibold px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">

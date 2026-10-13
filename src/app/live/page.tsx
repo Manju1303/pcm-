@@ -183,114 +183,105 @@ export default function LiveMonitoringPage() {
       />
       <div className="space-y-6">
         {/* Top Banner */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-              <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Live Chamber Gauge Monitor</h1>
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Live Monitor</h1>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+            {buzzerError && (
+              <span className="text-xs text-rose-600 font-medium">{buzzerError}</span>
+            )}
+
+            <button
+              onClick={handleTestBuzzer}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center space-x-1.5 transition-all touch-target ${
+                buzzerTestTriggered
+                  ? "bg-rose-50 border-rose-300 text-rose-700"
+                  : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+              }`}
+            >
+              {isAdmin ? <Volume2 className="w-4 h-4 text-amber-600" /> : <Lock className="w-4 h-4 text-slate-400" />}
+              <span>{buzzerTestTriggered ? "Buzzer Sounding!" : isAdmin ? "Test Alert Buzzer" : "Test Buzzer (Admin Only)"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3 Circular Dial Gauges */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <GaugeMeter
+            title="Tray 1"
+            subtitle="Upper Deck"
+            value={t1}
+            accentColor="#f97316"
+            min={20}
+            max={90}
+            warn={warnTray1}
+            crit={critTray1}
+            isStaleOrOffline={isStale || isOffline}
+          />
+          <GaugeMeter
+            title="Tray 2"
+            subtitle="Lower Deck"
+            value={t2}
+            accentColor="#6366f1"
+            min={20}
+            max={90}
+            warn={warnTray2}
+            crit={critTray2}
+            isStaleOrOffline={isStale || isOffline}
+          />
+          <GaugeMeter
+            title="PCM Core"
+            subtitle="Thermal Bed"
+            value={pcm}
+            accentColor="#059669"
+            min={20}
+            max={65}
+            warn={warnPcm}
+            crit={critPcm}
+            isStaleOrOffline={isStale || isOffline}
+          />
+        </div>
+
+        {/* Chamber Cross-Section Diagram */}
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
+          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 mb-4">
+            Airflow & Chamber Layout
+          </h3>
+
+          <div className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 p-6 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-800 shadow-2xs text-center w-full md:w-1/4">
+              <Wind className="w-6 h-6 text-amber-500 mx-auto animate-bounce" />
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 mt-2">Solar Intake</h4>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Real-time telemetry stream from ESP32. Standardised deck probes and PCM core dial monitoring.
-            </p>
-          </div>
 
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-          {buzzerError && (
-            <span className="text-xs text-rose-600 font-medium">{buzzerError}</span>
-          )}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-800 shadow-2xs text-center w-full md:w-1/4">
+              <Layers className="w-6 h-6 text-amber-600 mx-auto" />
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 mt-2">Tray 1</h4>
+              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                {formatTempUnit(t1)}
+              </span>
+            </div>
 
-          <button
-            onClick={handleTestBuzzer}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center space-x-1.5 transition-all touch-target ${
-              buzzerTestTriggered
-                ? "bg-rose-50 border-rose-300 text-rose-700"
-                : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
-            }`}
-          >
-            {isAdmin ? <Volume2 className="w-4 h-4 text-amber-600" /> : <Lock className="w-4 h-4 text-slate-400" />}
-            <span>{buzzerTestTriggered ? "Buzzer Sounding!" : isAdmin ? "Test Alert Buzzer" : "Test Buzzer (Admin Only)"}</span>
-          </button>
-        </div>
-      </div>
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200/80 dark:border-indigo-800 shadow-2xs text-center w-full md:w-1/4">
+              <Layers className="w-6 h-6 text-indigo-600 mx-auto" />
+              <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 mt-2">Tray 2</h4>
+              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                {formatTempUnit(t2)}
+              </span>
+            </div>
 
-      {/* 3 Circular Dial Gauges with Standardised Titles */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <GaugeMeter
-          title="Tray 1 - Upper Deck"
-          subtitle="Collector Hot Air Inlet"
-          value={t1}
-          accentColor="#f97316"
-          min={20}
-          max={90}
-          warn={warnTray1}
-          crit={critTray1}
-          isStaleOrOffline={isStale || isOffline}
-        />
-        <GaugeMeter
-          title="Tray 2 - Lower Deck"
-          subtitle="Intermediate Exhaust Flow Zone"
-          value={t2}
-          accentColor="#6366f1"
-          min={20}
-          max={90}
-          warn={warnTray2}
-          crit={critTray2}
-          isStaleOrOffline={isStale || isOffline}
-        />
-        <GaugeMeter
-          title="PCM Thermal Core"
-          subtitle="Paraffin RT-50 Storage Bed"
-          value={pcm}
-          accentColor="#059669"
-          min={20}
-          max={65}
-          warn={warnPcm}
-          crit={critPcm}
-          isStaleOrOffline={isStale || isOffline}
-        />
-      </div>
-
-      {/* Chamber Cross-Section Diagram */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
-        <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-1">
-          Chamber Thermodynamics & Airflow Diagram
-        </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Convective solar airflow path and conductive thermal core interaction
-        </p>
-
-        <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/50 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 shadow-2xs text-center w-full md:w-1/4">
-            <Wind className="w-6 h-6 text-amber-500 mx-auto animate-bounce" />
-            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 mt-2">Solar Air Intake</h4>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Preheated collector stream</p>
-          </div>
-
-          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-800 shadow-2xs text-center w-full md:w-1/4">
-            <Layers className="w-6 h-6 text-sky-600 mx-auto" />
-            <h4 className="text-xs font-bold text-sky-900 dark:text-sky-200 mt-2">Tray 1 - Upper Deck</h4>
-            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-              {formatTempUnit(t1)}
-            </span>
-          </div>
-
-          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 shadow-2xs text-center w-full md:w-1/4">
-            <Layers className="w-6 h-6 text-indigo-600 mx-auto" />
-            <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 mt-2">Tray 2 - Lower Deck</h4>
-            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-              {formatTempUnit(t2)}
-            </span>
-          </div>
-
-          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 shadow-2xs text-center w-full md:w-1/4">
-            <Flame className="w-6 h-6 text-emerald-600 mx-auto" />
-            <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200 mt-2">PCM Thermal Core</h4>
-            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-              {formatTempUnit(pcm)}
-            </span>
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs text-center w-full md:w-1/4">
+              <Flame className="w-6 h-6 text-emerald-600 mx-auto" />
+              <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200 mt-2">PCM Core</h4>
+              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                {formatTempUnit(pcm)}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
     </div>
   </>
 );

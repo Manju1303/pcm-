@@ -101,18 +101,13 @@ export default function SensorHealthPage() {
 
       <div className="space-y-6">
         {/* Title Header */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <div className="flex items-center space-x-2">
-                <Cpu className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                  Sensor Health & Hardware Diagnostics
-                </h1>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Real-time 1-Wire multi-drop probe telemetry, ROM mapping, and controller status.
-              </p>
+            <div className="flex items-center space-x-2">
+              <Cpu className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                Sensor Health
+              </h1>
             </div>
             <div className="flex items-center space-x-2">
               <span
@@ -123,7 +118,7 @@ export default function SensorHealthPage() {
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full ${isOnline && !isStale ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-                {isOnline && !isStale ? "Controller Active" : "Controller Offline"}
+                {isOnline && !isStale ? "Active" : "Offline"}
               </span>
             </div>
           </div>

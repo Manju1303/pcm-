@@ -25,19 +25,14 @@ export function LatestReadingsTable({ readings }: LatestReadingsTableProps) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
       {/* Table Header and Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-2">
           <List className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <div>
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-              Live Telemetry Stream Ingestion Log
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Raw sensor frames received from ESP32 with integrity status
-            </p>
-          </div>
+          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+            Telemetry Log
+          </h3>
         </div>
 
         <div className="flex items-center space-x-2">

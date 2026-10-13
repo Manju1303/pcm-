@@ -129,25 +129,25 @@ function AnalyticsContent() {
             <span className="text-[10px] text-slate-400 font-normal">{new Date(raw.timestamp).toLocaleDateString()}</span>
           </div>
           <div className="flex items-center justify-between text-sky-700 dark:text-sky-300 gap-4">
-            <span>Tray 1 - Upper Deck:</span>
+            <span>Tray 1:</span>
             <strong className="text-slate-900 dark:text-slate-100 tabular-nums">
               {raw.tray1 !== null ? `${raw.tray1.toFixed(1)}°C` : "--"}
             </strong>
           </div>
           <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300 gap-4">
-            <span>Tray 2 - Lower Deck:</span>
+            <span>Tray 2:</span>
             <strong className="text-slate-900 dark:text-slate-100 tabular-nums">
               {raw.tray2 !== null ? `${raw.tray2.toFixed(1)}°C` : "--"}
             </strong>
           </div>
           <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300 gap-4">
-            <span>PCM Thermal Core:</span>
+            <span>PCM Core:</span>
             <strong className="text-slate-900 dark:text-slate-100 tabular-nums">
               {raw.pcm !== null ? `${raw.pcm.toFixed(1)}°C` : "--"}
             </strong>
           </div>
           <div className="pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 font-sans">
-            Operating Mode: {raw.status}
+            Mode: {raw.status}
           </div>
         </div>
       );
@@ -155,30 +155,25 @@ function AnalyticsContent() {
     return null;
   };
 
-  const warnTray = thresholds?.tray1Warn ?? 58.0;
-  const critTray = thresholds?.tray1Crit ?? 68.0;
-  const plateauPcm = pcmConfig?.phaseChangeTempC ?? 50.0;
+  const warnTray = thresholds?.tray1Warn ?? 82.0;
+  const critTray = thresholds?.tray1Crit ?? 88.0;
+  const plateauPcm = pcmConfig?.phaseChangeTempC ?? 51.0;
 
   return (
     <>
-      <title>Thermal Analytics | Agni Sakthi</title>
+      <title>Analytics | Agni Sakthi</title>
       <meta
         name="description"
-        content="Historical temperature analytics, multi-range trend analysis, and CSV export for Agni Sakthi solar dryer."
+        content="Historical temperature analytics and CSV export for Agni Sakthi solar dryer."
       />
       <div className="space-y-6">
         {/* Title & Range Controls */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <LineChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Thermal Analytics & Multi-Range History
-              </h1>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Statistical trends, diurnal curves, and sensor frame analytics.
-            </p>
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <LineChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              Thermal Analytics
+            </h1>
           </div>
 
         <div className="flex flex-wrap items-center gap-2">

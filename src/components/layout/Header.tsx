@@ -142,17 +142,9 @@ export function Header() {
                 />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 tracking-tight">
-                    Agni Sakthi
-                  </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60">
-                    Solar Dryer
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
-                  IoT Solar Thermal Dryer • PCM Energy Storage
-                </p>
+                <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 tracking-tight">
+                  Agni Sakthi
+                </span>
               </div>
             </Link>
           </div>

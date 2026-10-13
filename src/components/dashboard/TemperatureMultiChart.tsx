@@ -117,25 +117,22 @@ export function TemperatureMultiChart({
   ];
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
       {/* Top Header with Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
-          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-            Thermal Dynamics & Multi-Series Curves
+          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+            Temperature History
           </h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Observing temperature trajectories across both product trays and the PCM bed
-          </p>
         </div>
 
         {/* Time Filter Pills */}
-        <div className="flex items-center flex-wrap gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center flex-wrap gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
           {timeButtons.map((btn) => (
             <button
               key={btn.id}
               onClick={() => onFilterChange(btn.id)}
-              className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${
+              className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
                 filter === btn.id
                   ? "bg-emerald-600 text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -149,7 +146,7 @@ export function TemperatureMultiChart({
 
       {/* Custom Date Range Picker when selected */}
       {filter === "custom" && (
-        <div className="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-3 text-xs">
+        <div className="mb-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-3 text-xs">
           <Calendar className="w-4 h-4 text-emerald-600" />
           <div className="flex items-center space-x-2">
             <span className="text-slate-600 dark:text-slate-400">From:</span>
@@ -173,55 +170,53 @@ export function TemperatureMultiChart({
       )}
 
       {/* Series and Reference Line Toggle Switches */}
-      <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
-        <span className="text-[11px] text-slate-500 uppercase font-mono mr-1">Probes:</span>
+      <div className="flex flex-wrap items-center gap-1.5 mb-3 text-xs">
         <button
           onClick={() => setShowTray1(!showTray1)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs transition-colors ${
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors ${
             showTray1
               ? "bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300 font-medium"
               : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />
-          <span>Tray 1 - Upper Deck</span>
+          <span>Tray 1</span>
         </button>
 
         <button
           onClick={() => setShowTray2(!showTray2)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs transition-colors ${
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors ${
             showTray2
               ? "bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 font-medium"
               : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
-          <span>Tray 2 - Lower Deck</span>
+          <span>Tray 2</span>
         </button>
 
         <button
           onClick={() => setShowPcm(!showPcm)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs transition-colors ${
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors ${
             showPcm
               ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-medium"
               : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-          <span>PCM Thermal Core</span>
+          <span>PCM Core</span>
         </button>
 
-        <span className="text-[11px] text-slate-500 uppercase font-mono ml-2 mr-1">Thresholds:</span>
         <button
           onClick={() => setShowPlateauLine(!showPlateauLine)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs transition-colors ${
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors ${
             showPlateauLine
               ? "bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-medium"
               : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
           }`}
         >
           <span className="w-2.5 h-0.5 bg-amber-500 inline-block" />
-          <span>Plateau ({pcmPhaseChangeTemp}°C)</span>
+          <span>Plateau</span>
         </button>
 
         <button

@@ -17,38 +17,38 @@ export function MetricsSummaryCard({
   const sensors = [
     {
       id: "tray1",
-      name: "Tray 1 - Upper Deck",
+      name: "Tray 1",
       data: metrics.tray1,
-      color: "text-sky-700 dark:text-sky-300",
-      accent: "border-sky-200 dark:border-sky-800",
+      color: "text-amber-800 dark:text-amber-300",
+      accent: "border-amber-200/80 dark:border-amber-800",
     },
     {
       id: "tray2",
-      name: "Tray 2 - Lower Deck",
+      name: "Tray 2",
       data: metrics.tray2,
-      color: "text-indigo-700 dark:text-indigo-300",
-      accent: "border-indigo-200 dark:border-indigo-800",
+      color: "text-indigo-800 dark:text-indigo-300",
+      accent: "border-indigo-200/80 dark:border-indigo-800",
     },
     {
       id: "pcm",
-      name: "PCM Thermal Core",
+      name: "PCM Core",
       data: metrics.pcm,
-      color: "text-emerald-700 dark:text-emerald-300",
-      accent: "border-emerald-200 dark:border-emerald-800",
+      color: "text-emerald-800 dark:text-emerald-300",
+      accent: "border-emerald-200/80 dark:border-emerald-800",
     },
   ];
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
         <div className="flex items-center space-x-2">
           <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-            Statistical Temperature Summary
+          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+            Metrics Summary
           </h3>
         </div>
-        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
-          Period: <strong className="text-slate-700 dark:text-slate-200 font-sans">{periodLabel}</strong> ({metrics.count} samples)
+        <span className="text-xs font-mono text-slate-400 dark:text-slate-500">
+          {periodLabel} • {metrics.count} samples
         </span>
       </div>
 
@@ -56,7 +56,7 @@ export function MetricsSummaryCard({
         {sensors.map((sensor) => (
           <div
             key={sensor.id}
-            className={`p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border ${sensor.accent} space-y-2`}
+            className={`p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border ${sensor.accent} space-y-2`}
           >
             <h4 className={`text-xs font-bold uppercase tracking-wider ${sensor.color}`}>
               {sensor.name}

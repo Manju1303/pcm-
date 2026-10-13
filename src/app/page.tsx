@@ -9,16 +9,13 @@ import { SensorHealthPanel } from "@/components/dashboard/SensorHealthPanel";
 import { MetricsSummaryCard } from "@/components/dashboard/MetricsSummaryCard";
 import { TemperatureMultiChart, TimeFilterOption } from "@/components/dashboard/TemperatureMultiChart";
 import { LatestReadingsTable } from "@/components/dashboard/LatestReadingsTable";
-import { ProjectStatusCard } from "@/components/dashboard/ProjectStatusCard";
 import { computePeriodMetrics } from "@/lib/metrics";
 import { formatRelativeTime, formatExactDateTime } from "@/lib/utils";
 import {
   Activity,
   Clock,
   AlertTriangle,
-  Milestone,
   CheckCircle2,
-  ShieldAlert,
 } from "lucide-react";
 
 export default function DashboardOverviewPage() {
@@ -34,7 +31,6 @@ export default function DashboardOverviewPage() {
     activeAlerts,
     deviceMetadata,
     featureFlags,
-    projectPhases,
   } = useTelemetry();
 
   const [timeFilter, setTimeFilter] = useState<TimeFilterOption>("24h");
@@ -101,11 +97,6 @@ export default function DashboardOverviewPage() {
     currentReading && currentReading.temperatures.tray1 !== null && currentReading.temperatures.tray2 !== null
       ? (currentReading.temperatures.tray1 + currentReading.temperatures.tray2) / 2
       : null;
-
-  // Active Project Phase summary
-  const currentPhase = projectPhases.find((p) => p.status === "In progress") ||
-    projectPhases.find((p) => p.status === "Not started") ||
-    projectPhases[0] || { phaseNumber: 1, title: "Hardware identification & wiring", status: "In progress" };
 
   return (
     <>
@@ -175,13 +166,13 @@ export default function DashboardOverviewPage() {
             </div>
           </Link>
 
-          {/* Project Phase */}
+          {/* Chamber Avg Temp */}
           <div className="p-4 rounded-2xl border border-slate-200/80 bg-white/90 shadow-xs hover:shadow-sm transition-all">
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-              Project Milestone
+              Avg Chamber Temp
             </span>
-            <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-              Phase {currentPhase.phaseNumber}: {currentPhase.status}
+            <div className="text-xs sm:text-sm font-bold text-slate-900 font-mono truncate">
+              {trayAvg !== null ? `${trayAvg.toFixed(1)}°C` : "--"}
             </div>
           </div>
         </div>
@@ -194,11 +185,11 @@ export default function DashboardOverviewPage() {
         pcmTemp={currentReading?.temperatures.pcm ?? null}
       />
 
-      {/* 2. Overview Order Item 2: The 3 Primary Temperature Cards */}
+      {/* Primary Temperature Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <SensorCard
-          title="Tray 1 - Upper Deck"
-          subtitle="Collector Air Inlet Zone"
+          title="Tray 1"
+          subtitle="Upper Deck"
           value={currentReading?.temperatures.tray1 ?? null}
           status={currentReading?.sensors.tray1 ?? "disconnected"}
           trend={tray1Trend.trend}
@@ -211,8 +202,8 @@ export default function DashboardOverviewPage() {
         />
 
         <SensorCard
-          title="Tray 2 - Lower Deck"
-          subtitle="Intermediate Exhaust Flow Zone"
+          title="Tray 2"
+          subtitle="Lower Deck"
           value={currentReading?.temperatures.tray2 ?? null}
           status={currentReading?.sensors.tray2 ?? "disconnected"}
           trend={tray2Trend.trend}
@@ -225,8 +216,8 @@ export default function DashboardOverviewPage() {
         />
 
         <SensorCard
-          title="PCM Thermal Core"
-          subtitle="Phase Change Material Storage Bed"
+          title="PCM Core"
+          subtitle="Thermal Bed"
           value={currentReading?.temperatures.pcm ?? null}
           status={currentReading?.sensors.pcm ?? "disconnected"}
           trend={pcmTrend.trend}
@@ -285,10 +276,7 @@ export default function DashboardOverviewPage() {
         isOffline={isOffline}
       />
 
-      {/* Project Status Card (Read-only on Overview) */}
-      <ProjectStatusCard phases={projectPhases} />
-
-      {/* 5. Overview Order Item 5: Telemetry Log Table */}
+      {/* Telemetry Log Table */}
       <LatestReadingsTable readings={history} />
     </div>
   </>

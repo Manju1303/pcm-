@@ -90,51 +90,41 @@ export default function AlertsSafetyPage() {
 
       <div className="space-y-6">
         {/* Title Header */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <BellRing className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                Alerts, Thresholds & Dual-Buzzer Safety
-              </h1>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Real-time threshold surveillance for drying trays, PCM core, power supply, and offline disconnection alerts.
-            </p>
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <BellRing className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+              System Alerts
+            </h1>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleRequestPermission}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-xs"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-xs"
             >
               <Bell className="w-3.5 h-3.5" />
-              <span>{notificationStatus === "granted" ? "Notifications Enabled" : "Enable Browser Notifications"}</span>
+              <span>{notificationStatus === "granted" ? "Notifications Enabled" : "Enable Notifications"}</span>
             </button>
           </div>
         </div>
 
         {/* Hardware Dual Buzzer Status */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-xs flex items-center justify-between shadow-xs">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center space-x-3">
             <Volume2 className="w-5 h-5 text-amber-500 shrink-0" />
-            <div>
-              <div className="font-semibold text-slate-900 dark:text-slate-100">
-                Autonomous Dual-Buzzer Protection (GPIO 25 Warning / GPIO 26 Critical)
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                Local audible alerts operate autonomously on ESP32 hardware without cloud latency.
-              </p>
+            <div className="font-semibold text-slate-900 dark:text-slate-100">
+              Autonomous Dual-Buzzer Protection
             </div>
           </div>
           <span
-            className={`text-[10px] px-2.5 py-1 rounded font-mono font-medium shrink-0 ${
+            className={`text-[10px] px-2.5 py-1 rounded-full font-mono font-medium shrink-0 ${
               buzzerKnown
                 ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
             }`}
           >
-            {buzzerKnown ? "Active Telemetry" : "Hardware Armed"}
+            {buzzerKnown ? "Active" : "Armed"}
           </span>
         </div>
 

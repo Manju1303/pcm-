@@ -63,7 +63,7 @@ export default function RootLayout({
           </div>
           <BottomTabBar />
           <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-3 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Agni Sakthi • Solar Dryer with Phase Change Material (PCM) Thermal Storage
+            Agni Sakthi • Solar Dryer IoT
           </footer>
         </TelemetryProvider>
       </body>
